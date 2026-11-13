@@ -68,7 +68,7 @@ that *is* the game.
     </td>
     <td align="center" width="50%">
       <a href="https://armd.one/glimmer/?cart=hello"><img alt="hello" src="docs/assets/carts/hello.gif" width="100%"></a>
-      <br><b>hello</b>: the smallest useful cart; move a star, make a chirp
+      <br><b>hello</b>: the smallest useful cart; move a star, make it burst
       <br><a href="https://armd.one/glimmer/?cart=hello">▶ play</a> · <a href="carts/hello.glim">source</a>
     </td>
   </tr>
@@ -76,12 +76,10 @@ that *is* the game.
 
 ## 👋 Hello, world
 
-A whole game is three functions. Save this as `hello.glim` and run
-`glimmer hello.glim`:
+A whole game is a couple of functions. Save this as `hello.lua` and run
+`glimmer hello.lua`:
 
 ```lua
-glimmer cart 1
-[code]
 x = 128
 
 function _update()
@@ -99,7 +97,7 @@ end
 Then turn it into a shareable picture:
 
 ```sh
-glimmer --export hello.glim hello.png
+glimmer --export hello.lua hello.png
 ```
 
 ## 📦 Install
@@ -188,7 +186,7 @@ Drop a `.glim` or `.png` cart onto the window to load it.
 
 ## 📐 The console
 
-| | |
+| Part | Spec |
 |---|---|
 | **Display** | 256 × 144, 60 fps, integer-scaled |
 | **Colors** | 32 from a programmable palette, with draw and screen palette swaps |
