@@ -1,7 +1,13 @@
 #include <doctest.h>
 
+#include <set>
+#include <string>
+
+#include "editors/api_docs.hpp"
 #include "editors/clipboard.hpp"
 #include "editors/history.hpp"
+#include "editors/lua_lexer.hpp"
+#include "runtime/console.hpp"
 
 using namespace glim;
 using namespace glim::editors;
@@ -98,4 +104,63 @@ TEST_CASE("pixel and cell clips round-trip through text") {
   CHECK_FALSE(decode_bytes(encode_bytes("sfx", bytes), "pattern", back));
   CHECK_FALSE(decode_pixels("glimmer pixels 2 2\n00\n", p2));
   CHECK_FALSE(decode_pixels("hello", p2));
+}
+
+namespace {
+std::string classes(std::string_view line, LexState& st) {
+  std::vector<Tok> toks;
+  st = lex_line(line, st, toks);
+  std::string out;
+  for (Tok t : toks) out += char('0' + int(t));
+  return out;
+}
+}  // namespace
+
+TEST_CASE("lexer classifies keywords, api calls, strings, numbers and comments") {
+  LexState st;
+  // local x = spr(1) -- hi
+  auto c = classes("local x = spr(1) -- hi", st);
+  CHECK(c.substr(0, 5) == "11111");           // local
+  CHECK(c[6] == '0');                         // x
+  CHECK(c.substr(10, 3) == "222");            // spr
+  CHECK(c[14] == '6');                        // 1
+  CHECK(c.substr(17) == "77777");             // comment
+  CHECK(classes("s = \"a\\\"b\" .. 0x1f", st).substr(4, 6) == "555555");
+  CHECK(classes("p.spr = 1", st).substr(2, 3) == "000");  // fields aren't the api
+  CHECK(classes("function _draw()", st).substr(9, 5) == "33333");
+}
+
+TEST_CASE("lexer carries long strings and comments across lines") {
+  LexState st;
+  classes("x = [==[ start", st);
+  CHECK(st.mode == LexState::kLongString);
+  CHECK(st.level == 2);
+  CHECK(classes("still ]] inside", st) == std::string(15, '5'));
+  auto c = classes("done ]==] y", st);
+  CHECK(st.mode == LexState::kNormal);
+  CHECK(c.back() == '0');
+  classes("--[[ block", st);
+  CHECK(st.mode == LexState::kLongComment);
+  classes("]] cls()", st);
+  CHECK(st.mode == LexState::kNormal);
+}
+
+TEST_CASE("every function a cart can call is documented for the editor") {
+  Console con;
+  std::set<std::string> globals;
+  con.on_log = [&](std::string_view s) { globals.emplace(s); };
+  cart::Cart c;
+  // Lua's own libraries are documented upstream; skip them.
+  c.code = R"(
+    local std = {assert=1, error=1, getmetatable=1, ipairs=1, next=1, pairs=1, pcall=1,
+      rawequal=1, rawget=1, rawlen=1, rawset=1, select=1, setmetatable=1,
+      tonumber=1, tostring=1, type=1, xpcall=1, collectgarbage=1, warn=1}
+    for k, v in pairs(_G) do
+      if type(v) == "function" and not std[k] then printh(k) end
+    end
+  )";
+  con.run(c, 1);
+  con.tick();
+  REQUIRE(globals.size() > 50);
+  for (const auto& name : globals) CHECK_MESSAGE(find_api(name) != nullptr, "undocumented: " << name);
 }
