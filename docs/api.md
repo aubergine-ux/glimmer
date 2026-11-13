@@ -80,7 +80,7 @@ sprite 0 are never drawn.
 | `cursor([x], [y], [c])` | Move the print cursor and optionally set the pen |
 | `textwidth(value)` | Width in pixels of the widest line |
 
-The font is 3×5 pixels in a 4×6 cell. `\n` starts a new line. Codes 128–137
+The font is 3×5 pixels in a 4×6 cell, with descenders in the sixth row. `\n` starts a new line. Codes 128–137
 are symbols: ◀ ▶ ▲ ▼ ■ ♥ ✦ ♪ ✚ ▢.
 
 ## Draw state

@@ -60,7 +60,7 @@ values into `0x18200` at runtime.
 - Sprites and map tiles skip any color whose transparency bit is set. Only
   color 0 is transparent by default. Fill patterns do not apply to sprites.
 - Text uses the built-in 3 × 5 font in a 4 × 6 cell, so 64 columns by 24 rows
-  fit on screen.
+  fit on screen. The descenders of `g j p q y , ;` use the cell's sixth row.
 
 ## Sprites and map
 
