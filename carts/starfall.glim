@@ -1,0 +1,274 @@
+glimmer cart 1
+[meta]
+title = starfall
+author = glimmer
+spec = 1
+[code]
+-- starfall.glim: a vertical shooter.
+-- arrows move, z fires, x sets off a bomb (three per game).
+-- shows: object lists, simple collision, particles, screen shake,
+-- and keeping a high score with dset/dget.
+\
+-- game states: "title", "play" or "over"
+state = "title"
+\
+function _init()
+  hiscore = dget(0)
+  bits, shake = {}, 0
+  stars = {}
+  for i = 1, 60 do
+    -- three layers: far stars are dim and slow, near ones bright and fast
+    local layer = 1 + i % 3
+    add(stars, {x = rnd(256), y = rnd(144), speed = layer * 0.4, c = ({7, 6, 5})[layer]})
+  end
+  music(0)
+end
+\
+function start()
+  ship = {x = 124, y = 120, power = 1, cool = 0, hurt = 0}
+  lives, bombs, score = 3, 3, 0
+  shots, foes, foe_shots, bits, gifts = {}, {}, {}, {}, {}
+  wave, wave_timer, shake = 0, 60, 0
+  state = "play"
+end
+\
+-- big text: print into a spare corner of sprite sheet 1, then stretch it
+-- back out with sspr. each letter gets its own color from the list.
+function big_print(text, x, y, scale, colors)
+  cls(0)
+  print(text, 0, 0, 31)
+  for row = 0, 5 do memcpy((250 + row) * 128, 0x1a000 + row * 256, 64) end
+  cls(0)
+  for i = 0, #text - 1 do
+    pal(31, colors[i % #colors + 1])
+    sspr(i * 4, 250, 4, 6, x + i * 4 * scale, y, 4 * scale, 6 * scale)
+  end
+  pal()
+end
+\
+-- particles: little sparks that fly out and fade
+function burst(x, y, n, colors)
+  for i = 1, n do
+    local a, s = rnd(1), rnd(2) + 0.5
+    add(bits, {x = x, y = y, dx = cos(a) * s, dy = sin(a) * s, life = 15 + rnd(15), colors = colors})
+  end
+end
+\
+-- two boxes overlap? (all our objects are 8x8, with a small margin)
+function hit(a, b)
+  return abs(a.x - b.x) < 6 and abs(a.y - b.y) < 6
+end
+\
+-- each wave is a few foes with a pattern; waves get bigger as you go
+function spawn_wave()
+  wave = wave + 1
+  local n = min(3 + wave, 12)
+  for i = 1, n do
+    if wave % 3 == 0 then
+      -- divers swoop toward the player
+      add(foes, {kind = 5, x = rnd(240) + 8, y = -10 - i * 14, hp = 2, t = 0})
+    else
+      -- saucers weave down in a sine wave
+      add(foes, {kind = 4, x = 20 + (i * 37) % 216, y = -10 - i * 10, hp = 1, t = rnd(1), base = 0})
+    end
+  end
+  wave_timer = 240
+end
+\
+function update_play()
+  -- move, keeping the ship on screen
+  if btn("left") then ship.x = ship.x - 1.8 end
+  if btn("right") then ship.x = ship.x + 1.8 end
+  if btn("up") then ship.y = ship.y - 1.5 end
+  if btn("down") then ship.y = ship.y + 1.5 end
+  ship.x, ship.y = mid(4, ship.x, 244), mid(20, ship.y, 132)
+\
+  -- fire: more power means a wider spread
+  ship.cool = ship.cool - 1
+  if btn("a") and ship.cool <= 0 then
+    for i = 1, ship.power do
+      local spread = (i - (ship.power + 1) / 2) * 0.6
+      add(shots, {x = ship.x, y = ship.y - 6, dx = spread})
+    end
+    ship.cool = 7
+    sfx(0)
+  end
+\
+  -- a bomb clears every foe and enemy shot on screen
+  if btnp("b") and bombs > 0 then
+    bombs = bombs - 1
+    for f in all(foes) do
+      if f.y > 0 then burst(f.x, f.y, 12, {17, 16, 11}) score = score + 5 del(foes, f) end
+    end
+    foe_shots = {}
+    shake = 20
+    sfx(4)
+  end
+\
+  for s in all(shots) do
+    s.y = s.y - 4
+    s.x = s.x + s.dx
+    if s.y < -8 then del(shots, s) end
+  end
+\
+  wave_timer = wave_timer - 1
+  if #foes == 0 or wave_timer <= 0 then spawn_wave() end
+\
+  for f in all(foes) do
+    f.t = f.t + 1 / 60
+    if f.kind == 4 then
+      f.y = f.y + 0.6
+      f.x = f.x + sin(f.t) * 1.2
+    else
+      -- divers steer toward the ship as they fall
+      f.y = f.y + 1.4
+      f.x = f.x + mid(-0.8, (ship.x - f.x) * 0.03, 0.8)
+    end
+    -- now and then, shoot at the player
+    if f.y > 0 and rnd(1) < 0.006 + wave * 0.001 then
+      local a = atan2(ship.x - f.x, ship.y - f.y)
+      add(foe_shots, {x = f.x, y = f.y, dx = cos(a) * 1.4, dy = sin(a) * 1.4})
+    end
+    if f.y > 152 then del(foes, f) end
+    for s in all(shots) do
+      if hit(s, f) then
+        del(shots, s)
+        f.hp = f.hp - 1
+        burst(s.x, s.y, 3, {31, 17})
+        if f.hp <= 0 then
+          del(foes, f)
+          burst(f.x, f.y, 14, {31, 17, 16, 11})
+          score = score + (f.kind == 5 and 20 or 10)
+          shake = 4
+          sfx(1)
+          if rnd(1) < 0.08 then add(gifts, {x = f.x, y = f.y}) end
+        end
+        break
+      end
+    end
+  end
+\
+  for s in all(foe_shots) do
+    s.x, s.y = s.x + s.dx, s.y + s.dy
+    if s.y > 150 or s.y < -10 or s.x < -10 or s.x > 266 then del(foe_shots, s) end
+  end
+\
+  for g in all(gifts) do
+    g.y = g.y + 0.7
+    if hit(g, ship) then
+      ship.power = min(ship.power + 1, 3)
+      del(gifts, g)
+      sfx(3)
+    elseif g.y > 150 then
+      del(gifts, g)
+    end
+  end
+\
+  -- getting hit costs a life, then a moment of safety
+  ship.hurt = ship.hurt - 1
+  if ship.hurt <= 0 then
+    for list in all({foes, foe_shots}) do
+      for o in all(list) do
+        if hit(o, ship) then
+          del(list, o)
+          lives = lives - 1
+          ship.hurt = 90
+          ship.power = max(1, ship.power - 1)
+          burst(ship.x, ship.y, 20, {31, 30, 29})
+          shake = 12
+          sfx(2)
+          break
+        end
+      end
+    end
+  end
+  if lives <= 0 then
+    state = "over"
+    if score > hiscore then
+      hiscore = score
+      dset(0, hiscore)
+    end
+  end
+end
+\
+function _update()
+  for s in all(stars) do
+    s.y = (s.y + s.speed) % 144
+  end
+  for b in all(bits) do
+    b.x, b.y = b.x + b.dx, b.y + b.dy
+    b.dx, b.dy = b.dx * 0.92, b.dy * 0.92
+    b.life = b.life - 1
+    if b.life <= 0 then del(bits, b) end
+  end
+  if state == "play" then
+    update_play()
+  elseif btnp("a") then
+    start()
+  end
+  shake = max(0, shake - 1)
+end
+\
+function _draw()
+  cls(0)
+  -- shake by nudging the camera a random amount
+  camera(rnd(shake) - shake / 2, rnd(shake) - shake / 2)
+  for s in all(stars) do pset(s.x, s.y, s.c) end
+\
+  if state == "title" then
+    camera()
+    local title = "STARFALL"
+    -- big_print clears the screen to build its letters, so draw it first
+    big_print(title, 128 - #title * 8, 36, 4, {11, 12, 16, 17, 18, 17, 16, 12})
+    for s in all(stars) do pset(s.x, s.y, s.c) end
+    print("arrows move  z fires  x bombs", 70, 70, 6)
+    if t() % 1 < 0.6 then print("press z", 114, 90, 31) end
+    print("best " .. hiscore, 4, 136, 7)
+    return
+  end
+\
+  for b in all(bits) do
+    -- sparks cool down through their colors as they fade
+    local c = b.colors[min(#b.colors, 1 + flr((30 - b.life) / 8))]
+    pset(b.x, b.y, c)
+  end
+  for g in all(gifts) do spr(6, g.x - 4, g.y - 4) end
+  for f in all(foes) do spr(f.kind, f.x - 4, f.y - 4) end
+  for s in all(shots) do spr(3, s.x - 4, s.y - 4) end
+  for s in all(foe_shots) do spr(7, s.x - 4, s.y - 4) end
+  if state == "play" and (ship.hurt <= 0 or t() * 10 % 2 < 1) then
+    spr(1 + flr(t() * 12) % 2, ship.x - 4, ship.y - 4)
+  end
+\
+  camera()
+  print("score " .. score, 4, 2, 31)
+  for i = 1, lives do spr(8, 256 - i * 9, 1) end
+  print("bombs " .. bombs, 100, 2, 17)
+  if state == "over" then
+    print("GAME OVER", 110, 60, 11)
+    print("score " .. score .. "   best " .. hiscore, 86, 72, 31)
+    print("press z", 114, 90, 6)
+  end
+end
+[gfx]
+00000000000vv000000vv000000vv00000000000b000000b00hhhh00000000000uu0uu0000000000000000000000000000000000000000000000000000000000
+000000000005500000055000000ii00000333300bb0000bb0h0vv0h000000000uvuuuuu000000000000000000000000000000000000000000000000000000000
+0000000000v55v0000v55v00000hh000034444300bbaabb0h0vvvv0h000uu000uuuuuuu000000000000000000000000000000000000000000000000000000000
+00000000005qq500005qq500000gg00034v44v430baccab0hvvvvvvh00uvvu000uuuuu0000000000000000000000000000000000000000000000000000000000
+000000000v5555v00v5555v0000gg0003333333300baab00h0vvvv0h00uvvu0000uuu00000000000000000000000000000000000000000000000000000000000
+00000000v555555vv555555v000000000t0t0t0000b00b000h0vv0h0000uu000000u000000000000000000000000000000000000000000000000000000000000
+00000000v505505vv505505v0000000000000000000bb00000hhhh00000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000bb00000chhc0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+[sfx]
+01000000686c6468000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+02000000147910750cad00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+02000000de7812790ab500000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+020000009f15a315a615abb50000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+040000000c7d087d067904b10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+1000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+1000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+1000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+09002000c914c90cd514c90cc914d50cc914d50cc514c50cd114c50cc714c70cd314c70cc914c90cd514c90cc914d50cc914d50cc514c50cd114c50cc714c70cd314c70c
+04002000610864086808610864086808610864085d08610864085d08610864085d0861085f08630866085f08630866085f0863085c085f0863085c085f0863085c085f08
+[music]
+88894040
