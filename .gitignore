@@ -1,0 +1,16 @@
+# Build output
+/build*/
+/out/
+/dist/
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Local tooling
+CLAUDE.md
+.claude/
+/notes/
+/scratch/
