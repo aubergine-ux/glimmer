@@ -62,7 +62,7 @@ void big_text(gfx::Gfx& g, std::string_view s, int x, int y, int scale, int colo
 }
 
 constexpr const char* kBootLines[] = {
-    "glimmer 0.1.0  spec 1",
+    "glimmer " GLIMMER_VERSION "  spec 1",
     "256x144  32 colors  4 voices  lua 5.4",
     "type help to see commands, or browse for carts",
 };

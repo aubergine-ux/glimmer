@@ -84,7 +84,7 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[]) {
       usage();
       return SDL_APP_SUCCESS;
     } else if (a == "--version") {
-      std::puts("glimmer 0.1.0");
+      std::puts("glimmer " GLIMMER_VERSION);
       return SDL_APP_SUCCESS;
     } else if (a == "--fullscreen") {
       opts.fullscreen = true;

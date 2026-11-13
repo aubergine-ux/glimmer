@@ -69,7 +69,7 @@ App::~App() {
 std::string App::pref_path(const std::string& file) const { return prefs_ + file; }
 
 bool App::init(const Options& opts) {
-  SDL_SetAppMetadata("Glimmer", "0.1.0", "io.github.aubergine-ux.glimmer");
+  SDL_SetAppMetadata("Glimmer", GLIMMER_VERSION, "io.github.aubergine-ux.glimmer");
   if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_GAMEPAD)) {
     SDL_Log("SDL_Init failed: %s", SDL_GetError());
     return false;
