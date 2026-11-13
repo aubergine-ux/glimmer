@@ -16,6 +16,10 @@ struct Headless {
 };
 
 bool export_cart(const std::string& in, const std::string& out);
+
+// Drives the editors from a script of user actions (click, drag, type, key,
+// shot, record...). Used to test the studio and to capture docs footage.
+bool run_studio_script(const std::string& script_path, const std::string& cart_path);
 // Runs a cart without a window: used by CI to smoke-test demo carts and to
 // capture screenshots for the docs.
 bool run_headless(const Headless& opts);

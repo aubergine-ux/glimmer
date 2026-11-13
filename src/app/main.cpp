@@ -35,6 +35,7 @@ void usage() {
       "      --record OUT.gif    record the run as a 2x GIF at 30 fps\n"
       "      --record-from N     start recording at frame N\n"
       "      --press SPEC        hold buttons, e.g. a@30-60 or right@0-90 (repeatable)\n"
+      "  --studio-script FILE [CART]  drive the editors from a script of user actions\n"
       "  --version               print the version\n");
 }
 
@@ -71,6 +72,10 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[]) {
     } else if (a == "--export") {
       std::string in = next(), out = next();
       return glim::tools::export_cart(in, out) ? SDL_APP_SUCCESS : SDL_APP_FAILURE;
+    } else if (a == "--studio-script") {
+      std::string script = next();
+      std::string cart = i + 1 < argc && argv[i + 1][0] != '-' ? argv[++i] : "";
+      return glim::tools::run_studio_script(script, cart) ? SDL_APP_SUCCESS : SDL_APP_FAILURE;
     } else if (a == "--headless") {
       headless.cart = next();
       tool = true;
