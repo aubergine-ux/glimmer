@@ -4,34 +4,66 @@ title = hello
 author = glimmer
 spec = 1
 [code]
--- hello.glim: move the star with the arrow keys, press z to chirp.
+-- hello.glim: the smallest useful cart.
+-- arrow keys move the star, z makes it chirp and burst into sparks.
 
-x, y = 128, 72
-trail = {}
+x, y = 128, 80
+sparks = {}
 
-function _update()
-  if btn("left") then x = x - 1.5 end
-  if btn("right") then x = x + 1.5 end
-  if btn("up") then y = y - 1.5 end
-  if btn("down") then y = y + 1.5 end
-  if btnp("a") then sfx(0) end
-
-  add(trail, {x = x, y = y, life = 20})
-  for p in all(trail) do
-    p.life = p.life - 1
-    if p.life <= 0 then del(trail, p) end
+-- throw n sparks out of the star in random directions
+function burst(n, speed)
+  for i = 1, n do
+    local angle, s = rnd(1), rnd(speed)
+    add(sparks, {x = x, y = y, dx = cos(angle) * s, dy = sin(angle) * s, life = 30 + rnd(30)})
   end
 end
 
+function _update()
+  local dx, dy = 0, 0
+  if btn("left") then dx = -1.5 end
+  if btn("right") then dx = 1.5 end
+  if btn("up") then dy = -1.5 end
+  if btn("down") then dy = 1.5 end
+  x, y = mid(8, x + dx, 248), mid(16, y + dy, 132)
+  if dx ~= 0 or dy ~= 0 then burst(2, 0.4) end
+
+  if btnp("a") then
+    sfx(0)
+    burst(30, 2)
+  end
+
+  for s in all(sparks) do
+    s.x, s.y = s.x + s.dx, s.y + s.dy
+    s.dy = s.dy + 0.03 -- a little gravity
+    s.life = s.life - 1
+    if s.life <= 0 then del(sparks, s) end
+  end
+end
+
+-- sparks cool from white through yellow and pink to violet as they age
+local fade = {3, 29, 30, 30, 17, 18, 31}
+
 function _draw()
   cls(1)
-  for p in all(trail) do
-    -- fade from pink to violet as particles age
-    pset(p.x + rnd(3) - 1, p.y + rnd(3) - 1, p.life > 10 and 30 or 3)
+  for s in all(sparks) do
+    pset(s.x, s.y, fade[mid(1, flr(s.life / 8) + 1, #fade)])
   end
-  circfill(x, y, 3, 17)
-  circ(x, y, 5 + sin(t()) * 1.5, 18)
-  print("hello, glimmer!", 98, 20, 5)
+
+  -- a dithered glow behind the star, then the star itself
+  local r = 4 + sin(t() * 1.5)
+  fillp(0xa5a5)
+  circfill(x, y, r + 4, 3)
+  fillp()
+  circfill(x, y, r, 17)
+  circfill(x - 1, y - 1, r / 2, 18)
+
+  local msg = "hello, glimmer!"
+  local left = 128 - textwidth(msg) / 2
+  for i = 1, #msg do
+    local wave = sin(t() / 2 + i / 12) * 2
+    print(sub(msg, i, i), left + (i - 1) * 4, 24 + wave, i % 2 == 0 and 30 or 5)
+  end
+  print("arrows move   z chirps", 84, 134, 7)
 end
 [sfx]
 0200000058185c185f1464b00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
