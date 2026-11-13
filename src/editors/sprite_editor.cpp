@@ -300,7 +300,7 @@ void SpriteEditor::draw_canvas(ui::Ui& ui, const ui::Rect& r) {
   }
 
   // Input.
-  if (over && ui.clicked(2)) color_ = sheet_px(c, hover_x_, hover_y_);
+  if (over && ui.clicked(1)) color_ = sheet_px(c, hover_x_, hover_y_);
   if (over && ui.wheel()) {
     size_ = std::clamp(ui.wheel() > 0 ? size_ / 2 : size_ * 2, 1, 4);
     set_sprite(sprite_);
