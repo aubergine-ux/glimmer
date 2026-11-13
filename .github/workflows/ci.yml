@@ -1,0 +1,85 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  desktop:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Linux
+            os: ubuntu-24.04
+          - name: macOS
+            os: macos-15
+          - name: Windows
+            os: windows-2025
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install SDL build dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build libasound2-dev libpulse-dev libx11-dev libxext-dev \
+            libxrandr-dev libxcursor-dev libxi-dev libxss-dev libxkbcommon-dev libwayland-dev \
+            libegl1-mesa-dev libdrm-dev libgbm-dev
+
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DGLIMMER_FETCH_SDL=ON
+
+      - name: Build
+        run: cmake --build build --config Release --parallel
+
+      - name: Test
+        run: ctest --test-dir build -C Release --output-on-failure
+
+      - name: Smoke-test carts
+        shell: bash
+        run: |
+          exe=build/glimmer
+          [ -f build/Release/glimmer.exe ] && exe=build/Release/glimmer.exe
+          [ -f build/glimmer.exe ] && exe=build/glimmer.exe
+          [ -d build/glimmer.app ] && exe=build/glimmer.app/Contents/MacOS/glimmer
+          for cart in carts/*.glim; do
+            "$exe" --headless "$cart" --frames 300
+          done
+
+  web:
+    name: WebAssembly
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 4.0.19
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Configure
+        run: emcmake cmake -S . -B build-web -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build-web --parallel
+
+      - name: Test
+        run: ctest --test-dir build-web --output-on-failure
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: glimmer-web
+          path: |
+            build-web/glimmer.html
+            build-web/glimmer.js
+            build-web/glimmer.wasm
