@@ -1,5 +1,6 @@
 #include "cart/gif.hpp"
 
+#include <algorithm>
 #include <array>
 #include <unordered_map>
 
@@ -102,14 +103,40 @@ GifWriter::GifWriter(int width, int height, int scale) : w_(width), h_(height), 
 }
 
 void GifWriter::add_frame(const uint32_t* rgb, int delay_cs) {
+  // Bounding box of what changed since the last frame.
+  int x0 = 0, y0 = 0, x1 = w_ - 1, y1 = h_ - 1;
+  if (!prev_.empty()) {
+    x0 = w_;
+    y0 = h_;
+    x1 = y1 = -1;
+    for (int y = 0; y < h_; ++y)
+      for (int x = 0; x < w_; ++x)
+        if ((rgb[size_t(y) * w_ + x] & 0xFFFFFF) != prev_[size_t(y) * w_ + x]) {
+          x0 = std::min(x0, x);
+          x1 = std::max(x1, x);
+          y0 = std::min(y0, y);
+          y1 = std::max(y1, y);
+        }
+    if (x1 < 0) {
+      // Nothing changed: hold the previous frame longer instead.
+      last_delay_ += delay_cs;
+      out_[last_delay_at_] = uint8_t(last_delay_);
+      out_[last_delay_at_ + 1] = uint8_t(last_delay_ >> 8);
+      return;
+    }
+  }
+  prev_.assign(rgb, rgb + size_t(w_) * h_);
+  for (auto& p : prev_) p &= 0xFFFFFF;
+  int fw = x1 - x0 + 1, fh = y1 - y0 + 1;
+
   // Build the frame's color table. A console frame never has more than 32
   // colors; anything beyond that (it can't happen today) folds onto the last slot.
   std::array<uint32_t, kPaletteSize> table{};
   int used = 0;
   std::unordered_map<uint32_t, uint8_t> index;
-  std::vector<uint8_t> src(size_t(w_) * h_);
+  std::vector<uint8_t> src(size_t(fw) * fh);
   for (size_t i = 0; i < src.size(); ++i) {
-    uint32_t c = rgb[i] & 0xFFFFFF;
+    uint32_t c = rgb[(size_t(y0) + i / fw) * w_ + x0 + i % fw] & 0xFFFFFF;
     auto it = index.find(c);
     if (it == index.end()) {
       uint8_t slot = uint8_t(used < kPaletteSize ? used++ : kPaletteSize - 1);
@@ -121,18 +148,20 @@ void GifWriter::add_frame(const uint32_t* rgb, int delay_cs) {
 
   std::vector<uint8_t> px;
   px.reserve(src.size() * scale_ * scale_);
-  for (int y = 0; y < h_ * scale_; ++y) {
-    const uint8_t* row = &src[size_t(y / scale_) * w_];
-    for (int x = 0; x < w_ * scale_; ++x) px.push_back(row[x / scale_]);
+  for (int y = 0; y < fh * scale_; ++y) {
+    const uint8_t* row = &src[size_t(y / scale_) * fw];
+    for (int x = 0; x < fw * scale_; ++x) px.push_back(row[x / scale_]);
   }
 
   const uint8_t gce[] = {0x21, 0xF9, 0x04, 0x04, uint8_t(delay_cs), uint8_t(delay_cs >> 8), 0, 0};
+  last_delay_at_ = out_.size() + 4;
+  last_delay_ = delay_cs;
   out_.insert(out_.end(), gce, gce + sizeof gce);
   out_.push_back(0x2C);
-  put16(out_, 0);
-  put16(out_, 0);
-  put16(out_, w_ * scale_);
-  put16(out_, h_ * scale_);
+  put16(out_, x0 * scale_);
+  put16(out_, y0 * scale_);
+  put16(out_, fw * scale_);
+  put16(out_, fh * scale_);
   out_.push_back(uint8_t(0x80 | (kPaletteBits - 1)));  // local color table, 2^5 entries
   for (uint32_t c : table) {
     out_.push_back(uint8_t(c >> 16));

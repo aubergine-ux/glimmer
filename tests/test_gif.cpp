@@ -48,6 +48,29 @@ TEST_CASE("gif frames decode back to the exact pixels") {
   stbi_image_free(delays);
 }
 
+TEST_CASE("unchanged frames extend the delay and partial frames compose correctly") {
+  const int w = 16, h = 8;
+  std::vector<uint32_t> a(w * h, 0x112233), b = a;
+  b[3 * w + 5] = 0xFF0000;
+  GifWriter gif(w, h);
+  gif.add_frame(a.data(), 3);
+  gif.add_frame(a.data(), 3);  // identical: folds into frame 1
+  gif.add_frame(b.data(), 4);
+  CHECK(gif.frames() == 2);
+  auto data = gif.finish();
+  int* delays = nullptr;
+  int gw = 0, gh = 0, frames = 0, comp = 0;
+  stbi_uc* px = stbi_load_gif_from_memory(data.data(), int(data.size()), &delays, &gw, &gh, &frames, &comp, 4);
+  REQUIRE(px != nullptr);
+  REQUIRE(frames == 2);
+  CHECK(delays[0] == 60);
+  const stbi_uc* f2 = px + size_t(gw) * gh * 4;
+  CHECK(f2[(3 * w + 5) * 4] == 0xFF);
+  CHECK(f2[(0 * w + 0) * 4] == 0x11);  // untouched pixels keep the previous frame
+  stbi_image_free(px);
+  stbi_image_free(delays);
+}
+
 TEST_CASE("long recordings survive LZW dictionary resets") {
   const int w = 256, h = 144;
   std::vector<uint32_t> noise(w * h);
