@@ -66,6 +66,8 @@ class Input {
   bool btnp(int button, int player = 0) const;
   uint16_t buttons(int player) const;
   bool key(Key k) const { return k < kKeyCount && keys_[k]; }
+  // Current physical state, ignoring the per-frame latch.
+  bool live_key(Key k) const { return k < kKeyCount && live_keys_[k]; }
   bool keyp(Key k) const { return k < kKeyCount && keys_[k] && !prev_keys_[k]; }
   // Pressed, or held long enough to auto-repeat like a text editor key.
   bool keyr(Key k) const;
