@@ -10,6 +10,8 @@ namespace {
 
 constexpr int kRepeatDelay = 15;  // frames before btnp starts repeating
 constexpr int kRepeatRate = 4;
+constexpr int kKeyRepeatDelay = 24;  // text editing repeats faster than buttons
+constexpr int kKeyRepeatRate = 2;
 
 struct NamedKey {
   std::string_view name;
@@ -181,6 +183,7 @@ void Input::release_all() {
 void Input::begin_frame() {
   prev_keys_ = keys_;
   keys_ = live_keys_;
+  for (int k = 0; k < kKeyCount; ++k) key_frames_[k] = keys_[k] ? uint16_t(std::min(key_frames_[k] + 1, 60000)) : 0;
   prev_ = cur_;
   cur_ = pad_live_;
   for (const auto& b : keymap_.bindings())
@@ -210,6 +213,16 @@ bool Input::btnp(int button, int player) const {
 uint16_t Input::buttons(int player) const {
   return (player >= 0 && player < kPlayers) ? cur_[player] : 0;
 }
+
+bool Input::keyr(Key k) const {
+  if (k >= kKeyCount || !keys_[k]) return false;
+  int held = key_frames_[k];
+  return held == 1 || (held > kKeyRepeatDelay && (held - kKeyRepeatDelay - 1) % kKeyRepeatRate == 0);
+}
+
+bool Input::ctrl() const { return keys_[224] || keys_[228] || keys_[227] || keys_[231]; }
+bool Input::shift() const { return keys_[225] || keys_[229]; }
+bool Input::alt() const { return keys_[226] || keys_[230]; }
 
 bool Input::any_key_pressed() const {
   for (int k = 0; k < kKeyCount; ++k)

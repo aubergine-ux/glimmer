@@ -73,3 +73,20 @@ TEST_CASE("input registers mirror button and mouse state") {
   CHECK(mem.peek(addr::kMouse + 4) == 0b101);
   CHECK(int8_t(mem.peek(addr::kMouse + 5)) == -2);
 }
+
+TEST_CASE("keyr repeats held keys for text editing") {
+  Input in;
+  Key k = key_from_name("backspace");
+  in.set_key(k, true);
+  int fires = 0;
+  for (int f = 0; f < 30; ++f) {
+    in.begin_frame();
+    fires += in.keyr(k);
+  }
+  // Press on frame 1, then every 2 frames after the 24-frame delay: 25, 27, 29.
+  CHECK(fires == 4);
+  in.set_key(key_from_name("rctrl"), true);
+  in.begin_frame();
+  CHECK(in.ctrl());
+  CHECK_FALSE(in.shift());
+}

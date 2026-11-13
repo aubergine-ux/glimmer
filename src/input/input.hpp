@@ -67,6 +67,12 @@ class Input {
   uint16_t buttons(int player) const;
   bool key(Key k) const { return k < kKeyCount && keys_[k]; }
   bool keyp(Key k) const { return k < kKeyCount && keys_[k] && !prev_keys_[k]; }
+  // Pressed, or held long enough to auto-repeat like a text editor key.
+  bool keyr(Key k) const;
+  // Modifier state, either side.
+  bool ctrl() const;
+  bool shift() const;
+  bool alt() const;
   bool any_key_pressed() const;
   const Mouse& mouse() const { return mouse_; }
   bool mouse_pressed(int b) const { return (mouse_.buttons & ~prev_mouse_buttons_) & (1 << b); }
@@ -80,6 +86,7 @@ class Input {
   std::array<bool, kKeyCount> live_keys_{};
   std::array<bool, kKeyCount> keys_{};
   std::array<bool, kKeyCount> prev_keys_{};
+  std::array<uint16_t, kKeyCount> key_frames_{};
   std::array<uint16_t, kPlayers> pad_live_{};
   std::array<uint16_t, kPlayers> cur_{};
   std::array<uint16_t, kPlayers> prev_{};
