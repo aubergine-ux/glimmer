@@ -1,0 +1,6 @@
+#pragma once
+
+// Generated from web/player.html by CMake; edit that file instead.
+namespace glim::cart {
+inline constexpr const char* kPlayerTemplate = R"glimmer(@PLAYER_HTML@)glimmer";
+}  // namespace glim::cart

@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cstring>
 
+#include "cart/html.hpp"
 #include "cart/image.hpp"
 #include "gfx/palette.hpp"
 
@@ -323,6 +324,11 @@ LoadResult save_file(const std::string& path, const Cart& cart) {
   if (path.ends_with(".png")) {
     auto r = to_png(cart, bytes);
     if (!r.ok) return r;
+  } else if (path.ends_with(".html")) {
+    std::string html;
+    auto r = to_html(cart, html);
+    if (!r.ok) return r;
+    bytes.assign(html.begin(), html.end());
   } else {
     auto text = to_text(cart);
     bytes.assign(text.begin(), text.end());

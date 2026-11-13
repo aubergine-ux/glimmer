@@ -10,7 +10,11 @@ glimmer_module(core SOURCES core/memory.cpp)
 glimmer_module(gfx SOURCES gfx/gfx.cpp gfx/font.cpp DEPS glimmer_core)
 glimmer_module(audio SOURCES audio/audio.cpp DEPS glimmer_core)
 glimmer_module(input SOURCES input/input.cpp DEPS glimmer_core)
-glimmer_module(cart SOURCES cart/cart.cpp cart/pack.cpp cart/image.cpp cart/gif.cpp cart/bundle.cpp DEPS glimmer_gfx glimmer_miniz glimmer_stb)
+file(READ ${PROJECT_SOURCE_DIR}/web/player.html PLAYER_HTML)
+configure_file(cart/player_template.hpp.in ${CMAKE_CURRENT_BINARY_DIR}/generated/player_template.hpp @ONLY)
+glimmer_module(cart SOURCES cart/cart.cpp cart/pack.cpp cart/image.cpp cart/gif.cpp cart/bundle.cpp cart/html.cpp
+  DEPS glimmer_gfx glimmer_miniz glimmer_stb)
+target_include_directories(glimmer_cart PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/generated)
 glimmer_module(script SOURCES script/vm.cpp script/api.cpp script/prelude.cpp
   DEPS glimmer_gfx glimmer_audio glimmer_input glimmer_lua)
 glimmer_module(runtime SOURCES runtime/console.cpp DEPS glimmer_script glimmer_cart)
@@ -47,7 +51,17 @@ if(GLIMMER_BUILD_APP)
       --shell-file ${PROJECT_SOURCE_DIR}/web/shell.html
       --preload-file ${PROJECT_SOURCE_DIR}/carts@/carts
       -sEXPORTED_FUNCTIONS=_main,_glim_touch
-      -sEXPORTED_RUNTIME_METHODS=ccall,FS)
+      -sEXPORTED_RUNTIME_METHODS=ccall,FS,addRunDependency,removeRunDependency)
     set_property(TARGET glimmer APPEND PROPERTY LINK_DEPENDS ${PROJECT_SOURCE_DIR}/web/shell.html)
+
+    # The same program as a single .js with the wasm inlined, for exported
+    # HTML games and embeds.
+    add_executable(glimmer_player app/main.cpp app/tools.cpp platform/app.cpp)
+    target_include_directories(glimmer_player PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+    target_link_libraries(glimmer_player PRIVATE glimmer_editors glimmer_crt SDL3::SDL3)
+    set_target_properties(glimmer_player PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR} SUFFIX ".js")
+    target_link_options(glimmer_player PRIVATE -sSTACK_SIZE=1048576 -sSINGLE_FILE=1
+      -sEXPORTED_FUNCTIONS=_main,_glim_touch
+      -sEXPORTED_RUNTIME_METHODS=ccall,FS,addRunDependency,removeRunDependency)
   endif()
 endif()

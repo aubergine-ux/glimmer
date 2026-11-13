@@ -3,6 +3,7 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <filesystem>
 #include <string>
 #include <string_view>
 
@@ -15,6 +16,7 @@
 
 #include "app/tools.hpp"
 #include "cart/bundle.hpp"
+#include "cart/html.hpp"
 #include "platform/app.hpp"
 
 namespace {
@@ -65,6 +67,13 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[]) {
     std::freopen("CONOUT$", "w", stderr);
   }
 #endif
+  // Releases ship the web runtime beside the program, so HTML exports work offline.
+  if (const char* base = SDL_GetBasePath()) {
+    std::error_code ec;
+    auto js = std::filesystem::path(base) / "glimmer_player.js";
+    if (std::filesystem::exists(js, ec)) glim::cart::set_web_runtime(js.string());
+  }
+
   glim::platform::Options opts;
   glim::tools::Headless headless;
   bool tool = false;
