@@ -63,7 +63,10 @@ Studio::~Studio() = default;
 CodeEditor& Studio::code_editor() { return static_cast<CodeEditor&>(*editors_[0]); }
 
 void Studio::open(const cart::Cart& cart, const std::string& path) {
-  if (playing_) stop();
+  if (playing_ || paused_) {
+    playing_ = true;
+    stop();
+  }
   cart_ = cart;
   path_ = path;
   dirty_ = false;
@@ -94,12 +97,38 @@ void Studio::play() {
   console_.audio.reset();
   console_.run(cart_, seed());
   playing_ = true;
+  paused_ = false;
   showing_error_ = false;
+}
+
+void Studio::pause() {
+  playing_ = false;
+  paused_ = true;
+  console_.input.release_all();
+  message("paused: esc resumes with your changes, ctrl+r restarts");
+}
+
+void Studio::resume() {
+  if (!paused_ || console_.state() != Console::State::kRunning) {
+    play();
+    return;
+  }
+  if (!console_.reload(cart_)) {
+    const auto& e = console_.error();
+    code_editor().show_error(e.line, e.message);
+    select_editor(0);
+    message("can't resume, line " + std::to_string(e.line) + ": " + e.message, true);
+    return;
+  }
+  playing_ = true;
+  paused_ = false;
+  console_.input.release_all();
 }
 
 void Studio::stop() {
   if (!playing_) return;
   playing_ = false;
+  paused_ = false;
   bool crashed = console_.state() == Console::State::kError;
   if (crashed) {
     const auto& e = console_.error();
@@ -252,7 +281,7 @@ void Studio::tick_game() {
     return;
   }
   if (esc) {
-    stop();
+    pause();
     return;
   }
   if (ctrl && r) {
@@ -309,7 +338,12 @@ void Studio::draw_top_bar() {
   if (dirty_) title += "*";
   ui_.text_centered(title, {0, 0, kScreenW, kTopH}, th.text);
   if (ui_.icon_button(kScreenW - 22, 0, ui::Icon::kSave, false, "save (ctrl+s)", kTopH)) save();
-  if (ui_.icon_button(kScreenW - 11, 0, ui::Icon::kPlay, false, "run (ctrl+r)", kTopH)) play();
+  if (paused_) {
+    ui_.text("paused", kScreenW - 50, 2, th.warn);
+    if (ui_.icon_button(kScreenW - 11, 0, ui::Icon::kPlay, true, "resume with changes (esc)", kTopH)) resume();
+  } else if (ui_.icon_button(kScreenW - 11, 0, ui::Icon::kPlay, false, "run (ctrl+r)", kTopH)) {
+    play();
+  }
 }
 
 void Studio::draw_status_bar() {
@@ -325,11 +359,18 @@ void Studio::draw_status_bar() {
 }
 
 void Studio::tick_editor() {
-  for (auto k : {"escape", "f7", "r"}) hotkey(k);
+  bool esc = hotkey("escape");
+  hotkey("f7");
+  hotkey("r");
+  bool wants_escape = editors_[size_t(active_)]->wants_escape();
   console_.input.begin_frame();
   ui_.begin_frame();
   shortcuts();
   if (playing_) return;
+  if (paused_ && ((esc && !wants_escape) || (console_.input.ctrl() && console_.input.keyp(key_from_name("return"))))) {
+    resume();
+    if (playing_) return;
+  }
   // The editors show art in the cart's own colors.
   std::copy(cart_.palette.begin(), cart_.palette.end(), ui_.mem().data() + addr::kPalette);
   ui_.fill({0, 0, kScreenW, kScreenH}, ui_.theme().panel);

@@ -24,6 +24,7 @@ class MapEditor : public Editor {
   void update(ui::Ui& ui, const ui::Rect& body) override;
   void reset() override;
   std::string status() const override;
+  bool wants_escape() const override { return picker_ || has_sel_; }
 
   void copy() override;
   void cut() override;

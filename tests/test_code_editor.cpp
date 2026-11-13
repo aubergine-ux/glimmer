@@ -148,3 +148,21 @@ TEST_CASE("find selects the next match") {
   CHECK(line == 1);
   CHECK(col == 5);
 }
+
+TEST_CASE("esc pauses a running cart and resumes it with edited code") {
+  Driver d("function _init() n = 0 end\nfunction _update() n = n + 1 end\nfunction _draw() cls(n > 0 and 3 or 0) end");
+  d.key("ctrl+r");
+  for (int i = 0; i < 6; ++i) d.frame();
+  d.key("escape");
+  CHECK(d.studio.paused());
+  CHECK_FALSE(d.studio.playing());
+  // Change what _draw does while the game is paused, then go back.
+  std::string draw_line = "function _draw() cls(n > 0 and 3 or 0) end";
+  d.ed().set_cursor(2, int(draw_line.size()) - 4);  // just before " end"
+  d.type(" pset(0, 0, 8)");
+  d.key("escape");
+  CHECK(d.studio.playing());
+  for (int i = 0; i < 3; ++i) d.frame();
+  CHECK(d.con->mem.peek(addr::kScreen) == 8);
+  CHECK(d.con->mem.peek(addr::kScreen + 1) == 3);  // n kept counting: no restart
+}

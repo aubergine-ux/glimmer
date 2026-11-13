@@ -18,6 +18,7 @@ class SpriteEditor : public Editor {
   void update(ui::Ui& ui, const ui::Rect& body) override;
   void reset() override;
   std::string status() const override;
+  bool wants_escape() const override { return floating_ || has_sel_; }
 
   void undo() override;
   void redo() override;

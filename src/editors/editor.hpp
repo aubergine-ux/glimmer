@@ -22,6 +22,9 @@ class Editor {
 
   // Called when a different cart is loaded into the studio.
   virtual void reset() { history_.clear(); }
+  // True while the editor has something Esc should dismiss (a popup, a
+  // selection); otherwise Esc goes back to a paused game.
+  virtual bool wants_escape() const { return false; }
   // Context-sensitive hint for the status bar.
   virtual std::string status() const { return {}; }
 

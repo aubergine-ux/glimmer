@@ -22,6 +22,7 @@ class CodeEditor : public Editor {
   void update(ui::Ui& ui, const ui::Rect& body) override;
   void reset() override;
   std::string status() const override;
+  bool wants_escape() const override { return ac_open_ || find_open_ || ref_open_ || renaming_ >= 0; }
 
   void undo() override;
   void redo() override;

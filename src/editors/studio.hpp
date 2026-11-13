@@ -40,6 +40,10 @@ class Studio {
 
   void play();
   void stop();
+  // Esc during play pauses; resuming applies edits to the running game.
+  void pause();
+  void resume();
+  bool paused() const { return paused_; }
   void screenshot();
   void toggle_recording();
   bool recording() const { return gif_ != nullptr; }
@@ -86,6 +90,7 @@ class Studio {
   std::vector<std::unique_ptr<Editor>> editors_;
   int active_ = 0;
   bool playing_ = false;
+  bool paused_ = false;
   bool dirty_ = false;
   bool showing_error_ = false;
   std::string message_;
