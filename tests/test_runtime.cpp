@@ -265,3 +265,15 @@ TEST_CASE("breakpoints stop the cart and expose locals and globals") {
   con.tick();
   CHECK_FALSE(con.stopped());
 }
+
+TEST_CASE("camera() and color() with no arguments reset to the defaults") {
+  Console con;
+  std::string out;
+  con.on_log = [&](std::string_view s) { out = s; };
+  cart::Cart c;
+  c.code = "camera(12, 5) local ox, oy = camera() color(9) local old = color() "
+           "printh(tostr(peek2(0x182ac)), tostr(ox), tostr(oy), tostr(old), tostr(peek(0x182b0)))";
+  con.run(c, 1);
+  con.tick();
+  CHECK(out == "0 12 5 9 31");
+}

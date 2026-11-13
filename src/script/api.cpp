@@ -213,16 +213,20 @@ int l_clip(lua_State* L) {
 }
 
 int l_camera(lua_State* L) {
+  // Read the arguments before pushing results: with no arguments, stack
+  // slot 1 would otherwise be the old x we just pushed.
+  int x = iopt(L, 1, 0), y = iopt(L, 2, 0);
   auto& mem = vm_of(L).host().mem;
   lua_pushinteger(L, mem.peeks16(addr::kCamera));
   lua_pushinteger(L, mem.peeks16(addr::kCamera + 2));
-  G(L).camera(iopt(L, 1, 0), iopt(L, 2, 0));
+  G(L).camera(x, y);
   return 2;
 }
 
 int l_color(lua_State* L) {
+  int c = iopt(L, 1, 31);
   lua_pushinteger(L, G(L).pen());
-  G(L).color(iopt(L, 1, 31));
+  G(L).color(c);
   return 1;
 }
 
