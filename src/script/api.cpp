@@ -632,6 +632,7 @@ void register_api(Vm& vm) {
       {"printh", l_printh},
       {"reset", l_reset},
       {"trace", l_trace},
+      {nullptr, nullptr},
   };
   lua_State* L = vm.state();
   lua_pushglobaltable(L);
