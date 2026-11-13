@@ -132,6 +132,22 @@ void Console::tick() {
   }
 }
 
+void capture_label(cart::Cart& cart, int frames) {
+  auto con = std::make_unique<Console>();
+  con->run(cart, 1);
+  std::vector<float> sink(audio::kSamplesPerFrame);
+  for (int f = 0; f < frames && con->state() == Console::State::kRunning; ++f) {
+    con->tick();
+    con->audio.render(sink.data(), int(sink.size()));
+  }
+  if (con->state() != Console::State::kRunning) return;
+  cart.label.resize(addr::kScreenSize);
+  for (uint32_t i = 0; i < addr::kScreenSize; ++i) {
+    uint8_t px = con->mem.peek(addr::kScreen + i) & 31;
+    cart.label[i] = con->mem.peek(addr::kScreenPal + px) & 31;
+  }
+}
+
 void Console::present() { gfx.to_rgb(display_.data()); }
 
 void Console::show_error() {

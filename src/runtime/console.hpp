@@ -71,4 +71,8 @@ class Console {
   std::vector<uint32_t> display_ = std::vector<uint32_t>(kScreenW * kScreenH, 0);
 };
 
+// Runs a cart headless for a few seconds and stores its screen as the cart's
+// label, so exported PNG carts show the game instead of a placeholder.
+void capture_label(cart::Cart& cart, int frames = 180);
+
 }  // namespace glim

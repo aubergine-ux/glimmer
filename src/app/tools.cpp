@@ -31,29 +31,6 @@ bool parse_press(const std::string& spec, Press& out) {
 
 }  // namespace
 
-namespace {
-constexpr int kLabelFrames = 180;
-
-// Carts without a label get one from a short headless run, so exported PNGs
-// show the game instead of a placeholder.
-void capture_label(cart::Cart& c) {
-  auto console = std::make_unique<Console>();
-  Console& con = *console;
-  con.run(c, 1);
-  std::vector<float> sink(audio::kSamplesPerFrame);
-  for (int f = 0; f < kLabelFrames && con.state() == Console::State::kRunning; ++f) {
-    con.tick();
-    con.audio.render(sink.data(), int(sink.size()));
-  }
-  if (con.state() != Console::State::kRunning) return;
-  c.label.resize(addr::kScreenSize);
-  for (uint32_t i = 0; i < addr::kScreenSize; ++i) {
-    uint8_t px = con.mem.peek(addr::kScreen + i) & 31;
-    c.label[i] = con.mem.peek(addr::kScreenPal + px) & 31;
-  }
-}
-}  // namespace
-
 bool export_cart(const std::string& in, const std::string& out) {
   cart::Cart c;
   auto r = cart::load_file(in, c);
