@@ -10,7 +10,7 @@ glimmer_module(core SOURCES core/memory.cpp)
 glimmer_module(gfx SOURCES gfx/gfx.cpp gfx/font.cpp DEPS glimmer_core)
 glimmer_module(audio SOURCES audio/audio.cpp DEPS glimmer_core)
 glimmer_module(input SOURCES input/input.cpp DEPS glimmer_core)
-glimmer_module(cart SOURCES cart/cart.cpp cart/pack.cpp cart/image.cpp cart/gif.cpp DEPS glimmer_gfx glimmer_miniz glimmer_stb)
+glimmer_module(cart SOURCES cart/cart.cpp cart/pack.cpp cart/image.cpp cart/gif.cpp cart/bundle.cpp DEPS glimmer_gfx glimmer_miniz glimmer_stb)
 glimmer_module(script SOURCES script/vm.cpp script/api.cpp script/prelude.cpp
   DEPS glimmer_gfx glimmer_audio glimmer_input glimmer_lua)
 glimmer_module(runtime SOURCES runtime/console.cpp DEPS glimmer_script glimmer_cart)
@@ -45,7 +45,9 @@ if(GLIMMER_BUILD_APP)
     set_target_properties(glimmer PROPERTIES SUFFIX ".html")
     target_link_options(glimmer PRIVATE -sSTACK_SIZE=1048576
       --shell-file ${PROJECT_SOURCE_DIR}/web/shell.html
-      --preload-file ${PROJECT_SOURCE_DIR}/carts@/carts)
+      --preload-file ${PROJECT_SOURCE_DIR}/carts@/carts
+      -sEXPORTED_FUNCTIONS=_main,_glim_touch
+      -sEXPORTED_RUNTIME_METHODS=ccall,FS)
     set_property(TARGET glimmer APPEND PROPERTY LINK_DEPENDS ${PROJECT_SOURCE_DIR}/web/shell.html)
   endif()
 endif()

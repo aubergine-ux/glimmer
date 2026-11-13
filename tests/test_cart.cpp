@@ -164,3 +164,42 @@ TEST_CASE("plain lua files load as code-only carts") {
   CHECK(c.code == code);
   CHECK(c.spec_version() == kSpecVersion);
 }
+
+#include "cart/bundle.hpp"
+
+TEST_CASE("carts appended to a runtime are found again, and rebundling replaces them") {
+  std::vector<uint8_t> fake_exe = {0x7f, 'E', 'L', 'F', 1, 2, 3, 4};
+  std::string runtime = "glimmer_test_runtime.bin", game = "glimmer_test_game.bin";
+  REQUIRE(write_file(runtime, fake_exe));
+  Cart a;
+  a.code = "first";
+  REQUIRE(bundle(runtime, a, game).ok);
+  std::vector<uint8_t> out;
+  REQUIRE(read_file(game, out));
+  CHECK(std::equal(fake_exe.begin(), fake_exe.end(), out.begin()));
+  Cart back;
+  REQUIRE(find_appended(out, back));
+  CHECK(back.code == "first");
+
+  a.code = "second";
+  REQUIRE(bundle(game, a, game).ok);
+  REQUIRE(read_file(game, out));
+  REQUIRE(find_appended(out, back));
+  CHECK(back.code == "second");
+  CHECK(out.size() < fake_exe.size() + pack(a).size() + 40);  // no stacked carts
+  CHECK_FALSE(find_appended(fake_exe, back));
+  std::remove(runtime.c_str());
+  std::remove(game.c_str());
+}
+
+TEST_CASE("base64url round-trips any bytes") {
+  for (size_t n = 0; n < 10; ++n) {
+    std::vector<uint8_t> data;
+    for (size_t i = 0; i < n; ++i) data.push_back(uint8_t(i * 77 + 3));
+    std::vector<uint8_t> back;
+    auto text = base64url_encode(data);
+    CHECK(text.find_first_of("+/=") == std::string::npos);
+    REQUIRE(base64url_decode(text, back));
+    CHECK(back == data);
+  }
+}
