@@ -102,6 +102,15 @@ jobs:
       - name: Test
         run: ctest --test-dir build-web --output-on-failure
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Play the carts in a browser
+        run: |
+          pip install pillow
+          python tools/web_smoke.py build-web google-chrome
+
       - uses: actions/upload-artifact@v4
         with:
           name: glimmer-web
