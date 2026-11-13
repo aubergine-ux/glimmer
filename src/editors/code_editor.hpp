@@ -1,5 +1,6 @@
 #pragma once
 
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -32,6 +33,11 @@ class CodeEditor : public Editor {
 
   // Jump to a runtime or syntax error and keep the line highlighted until the next edit.
   void show_error(int line, const std::string& message);
+
+  // Debugger support: 1-based line numbers, like Lua's.
+  const std::set<int>& breakpoints() const { return breakpoints_; }
+  void toggle_breakpoint(int line);
+  void show_exec_line(int line);  // 0 clears it
 
   // Exposed for tests: cursor as (line, column), both 0-based.
   std::pair<int, int> cursor_pos() const;
@@ -129,6 +135,8 @@ class CodeEditor : public Editor {
   std::string rename_buf_;
 
   int error_line_ = -1;
+  int exec_line_ = -1;
+  std::set<int> breakpoints_;
   std::string error_msg_;
   std::string hint_;
 };

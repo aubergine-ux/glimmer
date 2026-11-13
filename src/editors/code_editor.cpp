@@ -369,6 +369,20 @@ void CodeEditor::paste() {
   if (!clean.empty()) insert_text(clean, EditKind::kOther);
 }
 
+void CodeEditor::toggle_breakpoint(int line) {
+  if (!breakpoints_.erase(line)) breakpoints_.insert(line);
+  studio_.set_breakpoints(breakpoints_);
+}
+
+void CodeEditor::show_exec_line(int line) {
+  exec_line_ = line - 1;
+  if (line <= 0) return;
+  reindex();
+  tab_ = tab_of_line(exec_line_);
+  move_to(pos_at(exec_line_, indent_of(exec_line_)), false);
+  if (exec_line_ < scroll_ || exec_line_ >= scroll_ + rows_) scroll_ = std::max(tabs_[tab_].first, exec_line_ - rows_ / 2);
+}
+
 void CodeEditor::show_error(int line, const std::string& message) {
   reindex();
   error_line_ = std::clamp(line - 1, 0, line_count() - 1);
@@ -686,6 +700,7 @@ void CodeEditor::handle_keys(ui::Ui& ui) {
   if (moved) ac_open_ = false;
 
   if (ctrl && kp("d")) duplicate_line();
+  if (ctrl && kp("b")) toggle_breakpoint(line_of(cursor_) + 1);
   if (ctrl && kp("/")) toggle_comment();
   if (ctrl && kp("pagedown")) select_tab((tab_ + 1) % int(tabs_.size()));
   if (ctrl && kp("pageup")) select_tab((tab_ + int(tabs_.size()) - 1) % int(tabs_.size()));
@@ -757,6 +772,8 @@ void CodeEditor::handle_mouse(ui::Ui& ui, const ui::Rect& area, int gutter) {
       while (b < text().size() && is_ident_char(text()[b])) ++b;
       anchor_ = a;
       cursor_ = b;
+    } else if (ui.mx() < area.x + 6) {
+      toggle_breakpoint(line_of(p) + 1);
     } else if (ui.mx() < area.x + gutter) {
       int l = line_of(p);
       anchor_ = line_start(l);
@@ -850,12 +867,15 @@ void CodeEditor::draw_text(ui::Ui& ui, const ui::Rect& area, int gutter, int row
     std::string_view s = line_text(l);
     size_t ls = line_start(l);
 
-    if (l == error_line_) ui.fill({area.x + gutter - 1, y, area.w - gutter + 1, gfx::kCharH}, 9);
+    if (l == exec_line_) ui.fill({area.x + gutter - 1, y, area.w - gutter + 1, gfx::kCharH}, 27);
+    else if (l == error_line_) ui.fill({area.x + gutter - 1, y, area.w - gutter + 1, gfx::kCharH}, 9);
     else if (l == cur_line && !has_selection()) ui.fill({area.x + gutter - 1, y, area.w - gutter + 1, gfx::kCharH}, th.panel);
 
     std::string num = std::to_string(l + 1);
     g.print(num, area.x + gutter - 4 - int(num.size()) * gfx::kCharW, y, l == cur_line ? th.text : th.raised + 1);
     if (l == error_line_) g.print("!", area.x + 1, y, th.error);
+    if (breakpoints_.count(l + 1)) g.circfill(area.x + 2, y + 2, 2, th.error);
+    if (l == exec_line_) g.print("\x81", area.x + 1, y, 17);
 
     // Selection and search matches behind the text.
     for (int c = 0; c < cols; ++c) {
@@ -1069,12 +1089,13 @@ void CodeEditor::update(ui::Ui& ui, const ui::Rect& body) {
 }
 
 std::string CodeEditor::status() const {
+  if (exec_line_ >= 0) return "stopped on line " + std::to_string(exec_line_ + 1) + "  f5 continue  f10 over  f11 into";
   if (error_line_ >= 0 && !error_msg_.empty()) return "line " + std::to_string(error_line_ + 1) + ": " + error_msg_;
   auto [l, c] = cursor_pos();
   std::string s = "ln " + std::to_string(l + 1) + " col " + std::to_string(c + 1);
   if (has_selection()) s += "  (" + std::to_string(selection().second - selection().first) + " selected)";
   if (!hint_.empty()) s += "  " + hint_;
-  else s += "  f1: api reference";
+  else s += "  f1: api reference  ctrl+b: breakpoint";
   return s;
 }
 

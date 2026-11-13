@@ -3,6 +3,7 @@
 #include <array>
 #include <functional>
 #include <memory>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -48,6 +49,9 @@ class Studio {
   void pause();
   void resume();
   bool paused() const { return paused_; }
+  bool debugging() const { return debugging_; }
+  void set_breakpoints(const std::set<int>& lines) { console_.set_breakpoints(lines); }
+  void debug_continue(script::StepMode mode);
   void screenshot();
   void toggle_recording();
   bool recording() const { return gif_ != nullptr; }
@@ -81,6 +85,7 @@ class Studio {
   void tick_game();
   void draw_top_bar();
   void draw_status_bar();
+  void draw_debug_panel(const ui::Rect& r);
   void shortcuts();
   bool hotkey(const char* name);
   const uint32_t* frame();
@@ -97,6 +102,9 @@ class Studio {
   int active_ = 0;
   bool playing_ = false;
   bool paused_ = false;
+  bool debugging_ = false;
+  int debug_scroll_ = 0;
+  std::set<std::string> debug_open_;  // expanded table variables
   bool dirty_ = false;
   bool showing_error_ = false;
   std::string message_;

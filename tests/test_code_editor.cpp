@@ -166,3 +166,20 @@ TEST_CASE("esc pauses a running cart and resumes it with edited code") {
   CHECK(d.con->mem.peek(addr::kScreen) == 8);
   CHECK(d.con->mem.peek(addr::kScreen + 1) == 3);  // n kept counting: no restart
 }
+
+TEST_CASE("ctrl+b breakpoints stop the game in the debugger and f5 continues") {
+  Driver d("n = 0\nfunction _update()\n  n = n + 1\nend");
+  d.ed().set_cursor(2, 0);
+  d.key("ctrl+b");
+  CHECK(d.ed().breakpoints().count(3));
+  d.key("ctrl+r");
+  for (int i = 0; i < 4; ++i) d.frame();
+  CHECK(d.studio.debugging());
+  CHECK_FALSE(d.studio.playing());
+  CHECK(d.ed().status().find("stopped on line 3") != std::string::npos);
+  d.key("ctrl+b");  // remove it, then continue
+  d.key("f5");
+  CHECK(d.studio.playing());
+  for (int i = 0; i < 4; ++i) d.frame();
+  CHECK_FALSE(d.studio.debugging());
+}

@@ -159,10 +159,19 @@ void Studio::resume() {
   console_.input.release_all();
 }
 
+void Studio::debug_continue(script::StepMode mode) {
+  debugging_ = false;
+  code_editor().show_exec_line(0);
+  console_.resume_debug(mode);
+  playing_ = true;
+}
+
 void Studio::stop() {
   if (!playing_) return;
   playing_ = false;
   paused_ = false;
+  debugging_ = false;
+  code_editor().show_exec_line(0);
   bool crashed = console_.state() == Console::State::kError;
   if (crashed) {
     const auto& e = console_.error();
@@ -331,6 +340,15 @@ void Studio::tick_game() {
     return;
   }
   console_.tick();
+  if (console_.stopped()) {
+    // Hit a breakpoint: show where, with the debugger beside the code.
+    playing_ = false;
+    debugging_ = true;
+    console_.input.release_all();
+    code_editor().show_exec_line(console_.debug_state()->line);
+    select_editor(kCodeTab);
+    return;
+  }
   if (f7) {
     // Capture the current screen as the cart's label, like snapping a photo for the box art.
     cart_.label.resize(addr::kScreenSize);
@@ -388,6 +406,65 @@ void Studio::draw_top_bar() {
   }
 }
 
+void Studio::draw_debug_panel(const ui::Rect& r) {
+  const auto& th = ui_.theme();
+  auto& g = ui_.g();
+  ui_.fill(r, th.panel);
+  g.line(r.x, r.y, r.x, r.bottom(), th.shadow);
+  int x = r.x + 2, y = r.y + 1;
+  if (ui_.icon_button(x, y, ui::Icon::kPlay, false, "continue (f5)")) debug_continue(script::StepMode::kNone);
+  if (ui_.button({x + 11, y + 1, 17, 8}, "over", false, "step over (f10)")) debug_continue(script::StepMode::kOver);
+  if (ui_.button({x + 29, y + 1, 17, 8}, "into", false, "step into (f11)")) debug_continue(script::StepMode::kInto);
+  if (ui_.button({x + 47, y + 1, 13, 8}, "out", false, "step out (shift+f11)")) debug_continue(script::StepMode::kOut);
+  if (ui_.icon_button(x + 61, y, ui::Icon::kStop, false, "stop the game")) {
+    playing_ = true;
+    stop();
+  }
+  if (!debugging_ || !console_.debug_state()) return;
+
+  const auto& d = *console_.debug_state();
+  // Flatten frames, variables and expanded tables into rows, then scroll.
+  struct Row {
+    std::string text;
+    int color;
+    std::string key;  // expandable when not empty
+  };
+  std::vector<Row> rows;
+  auto add_vars = [&](const std::vector<script::DebugVar>& vars, const std::string& scope) {
+    for (const auto& v : vars) {
+      std::string key = v.fields.empty() ? "" : scope + "." + v.name;
+      bool open = !key.empty() && debug_open_.count(key);
+      std::string mark = key.empty() ? " " : (open ? "\x83" : "\x81");
+      rows.push_back({mark + v.name + " " + v.value, v.name[0] == '^' ? th.dim : th.text, key});
+      if (open)
+        for (const auto& [k, val] : v.fields) rows.push_back({"   " + k + " " + val, th.dim, ""});
+    }
+  };
+  for (size_t i = 0; i < d.frames.size(); ++i) {
+    const auto& f = d.frames[i];
+    rows.push_back({f.function + "() :" + std::to_string(f.line), i == 0 ? 17 : th.dim, ""});
+    add_vars(f.vars, std::to_string(i));
+  }
+  if (!d.globals.empty()) {
+    rows.push_back({"globals", 25, ""});
+    add_vars(d.globals, "g");
+  }
+  ui::Rect list{r.x + 1, r.y + 12, r.w - 1, r.h - 12};
+  int visible = list.h / gfx::kCharH;
+  if (ui_.hovered(list) && ui_.wheel()) debug_scroll_ -= ui_.wheel() * 2;
+  debug_scroll_ = std::clamp(debug_scroll_, 0, std::max(0, int(rows.size()) - visible));
+  g.clip(list.x, list.y, list.w, list.h);
+  for (int i = 0; i < visible && debug_scroll_ + i < int(rows.size()); ++i) {
+    const Row& row = rows[size_t(debug_scroll_ + i)];
+    int ry = list.y + i * gfx::kCharH;
+    ui::Rect hit{list.x, ry, list.w, gfx::kCharH};
+    if (!row.key.empty() && ui_.hovered(hit)) ui_.fill(hit, th.raised);
+    ui_.text(row.text, list.x + 2, ry, row.color);
+    if (!row.key.empty() && ui_.clicked_in(hit) && !debug_open_.erase(row.key)) debug_open_.insert(row.key);
+  }
+  g.clip();
+}
+
 void Studio::draw_status_bar() {
   const auto& th = ui_.theme();
   int y = kScreenH - kStatusH;
@@ -413,6 +490,14 @@ void Studio::tick_editor() {
     std::copy(cart_.palette.begin(), cart_.palette.end(), ui_.mem().data() + addr::kPalette);
     if (shell().update_boot(ui_)) return;
   }
+  if (debugging_) {
+    auto& in = console_.input;
+    auto kp = [&](const char* k) { return in.keyp(key_from_name(k)); };
+    if (kp("f5")) debug_continue(script::StepMode::kNone);
+    else if (kp("f10")) debug_continue(script::StepMode::kOver);
+    else if (kp("f11")) debug_continue(in.shift() ? script::StepMode::kOut : script::StepMode::kInto);
+    if (playing_) return;
+  }
   if (paused_ && ((esc && !wants_escape) || (console_.input.ctrl() && console_.input.keyp(key_from_name("return"))))) {
     resume();
     if (playing_) return;
@@ -421,7 +506,13 @@ void Studio::tick_editor() {
   std::copy(cart_.palette.begin(), cart_.palette.end(), ui_.mem().data() + addr::kPalette);
   ui_.fill({0, 0, kScreenW, kScreenH}, ui_.theme().panel);
   ui::Rect body{0, kTopH, kScreenW, kScreenH - kTopH - kStatusH};
-  editors_[size_t(active_)]->update(ui_, body);
+  if (debugging_ && active_ == kCodeTab) {
+    constexpr int kPanelW = 96;
+    editors_[size_t(active_)]->update(ui_, {body.x, body.y, body.w - kPanelW, body.h});
+    draw_debug_panel({body.right() - kPanelW + 1, body.y, kPanelW, body.h});
+  } else {
+    editors_[size_t(active_)]->update(ui_, body);
+  }
   draw_top_bar();
   draw_status_bar();
   ui_.end_frame();
