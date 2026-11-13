@@ -101,6 +101,13 @@ of RAM, and an optional label image. There are three encodings:
 | Packed | `pack.cpp` | Tagged chunks deflated with miniz. Compact, and used for PNG carts and web embedding. |
 | `.png` | `pack.cpp` | Draws cartridge art with the label, then hides the packed cart in the low two bits of every RGBA channel, behind a CRC-checked header. |
 
+`load_file` also accepts a bare `.lua` file as a code-only cart, which is
+the gentlest way to start.
+
+`gif.cpp` is a small animated GIF encoder for recordings. Every console frame
+fits in a 32-color local table, so each frame is 5-bit LZW and nothing needs
+quantizing.
+
 ## script
 
 `script::Vm` owns a Lua 5.4 state and is the most delicate part of the system.
@@ -170,8 +177,22 @@ tools that don't open a window:
 - `--export IN OUT` converts between formats. A cart with no label gets one
   captured from a short run.
 - `--headless CART` runs a cart, optionally holding buttons on a schedule
-  (`--press a@30-60`) and saving a screenshot. CI uses it to smoke-test every
-  cart in `carts/`.
+  (`--press a@30-60`), saving a screenshot (`--crt` for the filtered 4×
+  version) or recording a GIF (`--record`). CI uses it to smoke-test every
+  cart in `carts/`, and `tools/readme_assets.py` uses it to render every
+  image in the README.
+
+On the web, `web/shell.html` hosts the canvas, the demo carts are bundled
+into the Emscripten file system, and `?cart=name` in the page URL picks which
+one to run.
+
+## Builds and CI
+
+| Workflow | What it does |
+|---|---|
+| `ci.yml` | Builds and tests on Linux, macOS, Windows and WebAssembly (tests under node), smoke-tests the carts, and runs the suite under ASan and UBSan |
+| `pages.yml` | Deploys the web console to GitHub Pages |
+| `release.yml` | On a `v*` tag, builds self-contained desktop packages (SDL linked statically; a universal binary on macOS) and publishes a GitHub release with notes taken from the changelog |
 
 ## Tests
 
@@ -181,5 +202,5 @@ tools that don't open a window:
 |---|---|
 | gfx | Primitive geometry, clipping, fill patterns, sprite flips and rotation, map layers and flags, font output |
 | audio | Pitch accuracy, sample-exact note starts, click-free volume changes, loops, music flow, buffer-size independence |
-| cart | Text, packed and PNG round trips, corrupt-data detection, size limits |
+| cart | Text, packed and PNG round trips, corrupt-data detection, size limits, `.lua` carts, lossless GIF frames |
 | runtime | Callback order, the error screen and line numbers, budget spill, infinite loops, coroutines, the sandbox, the standard helpers |
