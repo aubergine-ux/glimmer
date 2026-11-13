@@ -14,3 +14,7 @@ CLAUDE.md
 .claude/
 /notes/
 /scratch/
+
+# Tooling
+compile_commands.json
+.cache/

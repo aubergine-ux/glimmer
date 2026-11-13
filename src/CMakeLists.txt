@@ -1,0 +1,10 @@
+function(glimmer_module name)
+  cmake_parse_arguments(ARG "" "" "SOURCES;DEPS" ${ARGN})
+  add_library(glimmer_${name} STATIC ${ARG_SOURCES})
+  target_include_directories(glimmer_${name} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+  target_compile_options(glimmer_${name} PRIVATE ${GLIMMER_WARNINGS})
+  target_link_libraries(glimmer_${name} PUBLIC ${ARG_DEPS})
+endfunction()
+
+glimmer_module(core SOURCES core/memory.cpp)
+glimmer_module(gfx SOURCES gfx/gfx.cpp gfx/font.cpp DEPS glimmer_core)
