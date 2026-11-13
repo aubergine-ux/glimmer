@@ -189,6 +189,32 @@ playing.
 - **Sound previews:** these play the edited cart's sound data, which
   `Studio::sync_audio` copies into a scratch `Memory` every frame.
 
+**Play, pause and hot reload:**
+
+- **Pausing:** Esc during play pauses rather than stops.
+- **Resuming:** resuming calls `Console::reload`. It copies the edited
+  assets into RAM (the map only if it changed, so runtime `mset`s survive)
+  and runs the new code with `Vm::reload`. That runs the chunk on the main
+  Lua state, which never yields, under the same runaway guard, so functions
+  are redefined while `_init` state is kept.
+
+**The debugger** lives in the VM:
+
+- **Line hook:** a line hook is installed only while there are breakpoints
+  or a step is pending, so normal play pays nothing for it.
+- **Stopping:** on a matching line, the hook captures a `DebugState` (frames
+  with locals and upvalues, plus the cart's own globals, with tables expanded
+  one level) and yields the frame thread. The cart is frozen mid-frame, and
+  `tick()` reports `kBreak` until the debugger resumes it.
+- **Stepping:** step over and step out compare the number of cart frames on
+  the stack.
+- **API names:** names that exist before the cart runs are recorded at
+  startup, so the globals list shows only what the cart defined.
+
+**Captures:** F6 screenshots and F8 GIF recordings use the studio's base
+frame. The recording dot, toasts and the F3 performance overlay are drawn on
+a copy afterwards, so they never end up in a capture.
+
 Each editor is an `Editor` subclass whose `update()` handles input and draws
 in one pass. Every editor has its own `History`, a diff-based undo stack:
 
@@ -208,6 +234,7 @@ between carts and between Glimmer windows.
 | `SpriteEditor` | Edits a 1×1, 2×2 or 4×4 sprite block. Shape tools redraw from a snapshot every frame for live previews. Selections lift into a floating layer that can be dragged and dropped. |
 | `MapEditor` | Three zoom levels sample sprite pixels, so the quarter-zoom view shows the whole map. Auto-tiling takes the tile for each cell from a 4-bit neighbour mask within a 4×4 block (see [editor guide](docs/editors.md#auto-tiling)). |
 | `SfxEditor` | Draws steps, interpolating between mouse samples so fast drags leave no gaps, and plays each edited step on channel 3. |
+| `Shell` | The first tab: a command line with folder browsing, the cart browser, and the boot animation. The browser makes covers for label-less carts with `capture_label`, which runs a cart headless for a moment. |
 | `MusicEditor` | A tracker over the pattern table, showing the notes of each channel's sound effect. It has piano and keyboard note entry, and the view follows playback through the audio status. |
 
 ## platform
@@ -267,5 +294,5 @@ one to run.
 | gfx | Primitive geometry, clipping, fill patterns, sprite flips and rotation, map layers and flags, font output |
 | audio | Pitch accuracy, sample-exact note starts, click-free volume changes, loops, music flow, buffer-size independence |
 | cart | Text, packed and PNG round trips, corrupt-data detection, size limits, `.lua` carts, lossless GIF frames |
-| runtime | Callback order, the error screen and line numbers, budget spill, infinite loops, coroutines, the sandbox, the standard helpers |
-| editors | Undo history, clipboard formats, the Lua lexer, API docs coverage, and each editor driven through real input events (typing, indentation, tabs, error navigation, flips, auto-tiling, note entry) |
+| runtime | Callback order, the error screen and line numbers, budget spill, infinite loops, coroutines, the sandbox, the standard helpers, hot reload, breakpoints and stepping |
+| editors | Undo history, clipboard formats, the Lua lexer, API docs coverage, shell commands, and each editor driven through real input events (typing, indentation, tabs, error navigation, pause and resume, breakpoints, flips, auto-tiling, note entry) |

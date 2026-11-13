@@ -39,14 +39,29 @@ separately in [SPEC.md](SPEC.md).
 - **Music tracker:** pattern flags, piano and keyboard note entry, and
   playback that follows the music.
 - **`sprout` demo cart:** a tiny platformer.
+- **Shell:**
+  - Commands: `ls`, `cd`, `load`, `save`, `run`, `export`, `new`,
+    `browse`, `info`, `title`, `author`.
+  - Tab completion and command history.
+  - A boot animation with a chime.
+- **Cart browser:** carts in the current folder shown by their cover labels.
+  Carts without a label get one from a short run.
+- **Debugger:** line breakpoints, step over/into/out, the call stack with
+  locals and upvalues, the cart's globals, and expandable tables.
+- **Hot reload:** Esc pauses a game for editing, and Esc again resumes it
+  with the new code and assets, keeping its state.
+- **Captures:** F6 saves a 4× screenshot and F8 records a GIF, both to
+  `Pictures/glimmer`. F3 shows a CPU and memory overlay with a frame-cost
+  graph.
 - **Tools:** `--studio-script` drives the editors from a script, and GIF
   recordings only store what changed between frames.
 
 ### Changed
 
-- **No arguments:** running `glimmer` with no cart opens the editors on a
-  starter cart.
-- **Quitting:** Esc now returns to the editors; Ctrl+Q quits.
+- **No arguments:** running `glimmer` with no cart boots into the shell, with
+  a starter cart loaded.
+- **Esc and quitting:** Esc pauses the game and opens the editors; Ctrl+Q
+  quits.
 
 ## [0.1.0] - 2026-11-13
 

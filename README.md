@@ -46,6 +46,14 @@ that *is* the game.
   skinning, animation preview and zoom.
 - 🎵 **A tracker:** compose songs with a piano keyboard, draw sound effects
   step by step, and design your own wavetables.
+- 🔁 **Hot reload:** pause a game with <kbd>Esc</kbd>, change its code or
+  art, and carry on playing with the changes.
+- 🐞 **A real debugger:** breakpoints, stepping, the call stack and variables,
+  and a CPU/memory overlay on <kbd>F3</kbd>.
+- 💾 **A console shell and cart browser:** a boot animation, folder commands,
+  and a grid of cart covers to pick from.
+- 🎬 **One-key captures:** <kbd>F6</kbd> for a screenshot, <kbd>F8</kbd> to
+  record a GIF.
 - 🎨 **Pixel-perfect graphics:** sprites you can flip, stretch and rotate, a
   4-layer tile map, shapes, fill patterns, clipping, a camera, palette swaps,
   and a built-in pixel font.
@@ -64,8 +72,8 @@ that *is* the game.
 - 🧪 **Built to last:** a versioned [spec](SPEC.md), so carts keep working
   forever, and CI on Windows, macOS, Linux and the web.
 
-> **Coming next:** a console shell, a debugger, hot reload, GIF recording and a
-> cart browser. See the [roadmap](#roadmap).
+> **Coming next:** a standalone web player, an embeddable player with touch
+> controls, and one-click native game exports. See the [roadmap](#roadmap).
 
 ## 🕹️ Demo carts
 
@@ -91,8 +99,9 @@ that *is* the game.
 
 ## 👋 Hello, world
 
-A whole game is a couple of functions. Run `glimmer`, type this into the code
-editor and press <kbd>Ctrl</kbd>+<kbd>R</kbd>. Or save it as `hello.lua` and
+A whole game is a couple of functions. Run `glimmer`, type `new`, open the
+code editor (<kbd>Alt</kbd>+<kbd>2</kbd>), type this and press
+<kbd>Ctrl</kbd>+<kbd>R</kbd>. Or save it as `hello.lua` and
 run `glimmer hello.lua`:
 
 ```lua
@@ -197,7 +206,9 @@ python3 -m http.server -d build-web   # then open http://localhost:8000/glimmer.
 | Move | arrow keys or d-pad |
 | A / B / X / Y | <kbd>Z</kbd> <kbd>X</kbd> <kbd>A</kbd> <kbd>S</kbd> |
 | L / R | <kbd>Q</kbd> <kbd>W</kbd> |
-| Editors / back to the game | <kbd>Esc</kbd> / <kbd>Ctrl</kbd>+<kbd>R</kbd> |
+| Pause and edit / resume with changes | <kbd>Esc</kbd> |
+| Restart the cart | <kbd>Ctrl</kbd>+<kbd>R</kbd> |
+| Screenshot / record a GIF | <kbd>F6</kbd> / <kbd>F8</kbd> |
 | Save | <kbd>Ctrl</kbd>+<kbd>S</kbd> |
 | CRT filter | <kbd>F9</kbd> |
 | Fullscreen | <kbd>F11</kbd> |
@@ -240,7 +251,7 @@ today still run in every future Glimmer.
 
 - [x] **Core runtime:** graphics, synth, Lua, carts, PNG carts, CRT, web build
 - [x] **Built-in editors:** code, sprites, map, sound effects, music tracker
-- [ ] **Shell and debugging:** boot shell, breakpoints, hot reload, GIF recording, cart browser
+- [x] **Shell and debugging:** boot shell, breakpoints, hot reload, GIF recording, cart browser
 - [ ] **Sharing:** web player export, embeddable player with touch controls, standalone native builds
 - [ ] **Demo carts and polish:** six showcase games, accessibility, translations (English and Albanian)
 
