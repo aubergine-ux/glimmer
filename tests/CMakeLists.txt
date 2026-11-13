@@ -9,6 +9,7 @@ add_executable(glimmer_tests
   test_gif.cpp
   test_editors.cpp
   test_code_editor.cpp
+  test_sprite_editor.cpp
 )
 target_compile_options(glimmer_tests PRIVATE ${GLIMMER_WARNINGS})
 target_link_libraries(glimmer_tests PRIVATE glimmer_gfx glimmer_audio glimmer_input glimmer_runtime glimmer_editors glimmer_stb glimmer_doctest)
