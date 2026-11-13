@@ -28,9 +28,32 @@ bool parse_press(const std::string& spec, Press& out) {
 
 }  // namespace
 
+namespace {
+constexpr int kLabelFrames = 180;
+
+// Carts without a label get one from a short headless run, so exported PNGs
+// show the game instead of a placeholder.
+void capture_label(cart::Cart& c) {
+  Console con;
+  con.run(c, 1);
+  std::vector<float> sink(audio::kSamplesPerFrame);
+  for (int f = 0; f < kLabelFrames && con.state() == Console::State::kRunning; ++f) {
+    con.tick();
+    con.audio.render(sink.data(), int(sink.size()));
+  }
+  if (con.state() != Console::State::kRunning) return;
+  c.label.resize(addr::kScreenSize);
+  for (uint32_t i = 0; i < addr::kScreenSize; ++i) {
+    uint8_t px = con.mem.peek(addr::kScreen + i) & 31;
+    c.label[i] = con.mem.peek(addr::kScreenPal + px) & 31;
+  }
+}
+}  // namespace
+
 bool export_cart(const std::string& in, const std::string& out) {
   cart::Cart c;
   auto r = cart::load_file(in, c);
+  if (r.ok && c.label.empty() && out.ends_with(".png")) capture_label(c);
   if (r.ok) r = cart::save_file(out, c);
   if (!r.ok) {
     std::fprintf(stderr, "export failed: %s\n", r.error.c_str());
@@ -96,7 +119,7 @@ bool run_headless(const Headless& opts) {
     std::fprintf(stderr, "%s:%d: %s\n%s\n", opts.cart.c_str(), e.line, e.message.c_str(), e.traceback.c_str());
     return false;
   }
-  std::printf("%s: ran %llu frames, cpu %.0f%%\n", opts.cart.c_str(), (unsigned long long)con.frames(),
+  std::printf("%s: ran %llu frames, cpu %.1f%%\n", opts.cart.c_str(), (unsigned long long)con.frames(),
               con.cpu_usage() * 100.0);
   return true;
 }
