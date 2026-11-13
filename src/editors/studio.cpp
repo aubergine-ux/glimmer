@@ -6,6 +6,7 @@
 
 #include "editors/code_editor.hpp"
 #include "editors/map_editor.hpp"
+#include "editors/sfx_editor.hpp"
 #include "editors/sprite_editor.hpp"
 #include "gfx/font.hpp"
 
@@ -23,6 +24,7 @@ Studio::Studio(Console& console, Host host)
   editors_.push_back(std::make_unique<CodeEditor>(*this));
   editors_.push_back(std::make_unique<SpriteEditor>(*this));
   editors_.push_back(std::make_unique<MapEditor>(*this));
+  editors_.push_back(std::make_unique<SfxEditor>(*this));
 }
 
 Studio::~Studio() = default;

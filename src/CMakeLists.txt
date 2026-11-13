@@ -18,7 +18,7 @@ glimmer_module(runtime SOURCES runtime/console.cpp DEPS glimmer_script glimmer_c
 glimmer_module(crt SOURCES platform/crt.cpp)
 glimmer_module(ui SOURCES ui/ui.cpp ui/icons.cpp DEPS glimmer_gfx glimmer_input)
 glimmer_module(editors SOURCES editors/history.cpp editors/clipboard.cpp editors/api_docs.cpp editors/lua_lexer.cpp
-  editors/editor.cpp editors/studio.cpp editors/code_editor.cpp editors/sprite_editor.cpp editors/map_editor.cpp DEPS glimmer_ui glimmer_runtime)
+  editors/editor.cpp editors/studio.cpp editors/code_editor.cpp editors/sprite_editor.cpp editors/map_editor.cpp editors/sfx_editor.cpp DEPS glimmer_ui glimmer_runtime)
 
 if(GLIMMER_BUILD_APP)
   if(EMSCRIPTEN OR GLIMMER_FETCH_SDL)
