@@ -51,16 +51,25 @@ std::vector<std::string> split_words(const std::string& line) {
   return out;
 }
 
-// Big letters for the boot logo, drawn from the console font.
-void big_text(gfx::Gfx& g, std::string_view s, int x, int y, int scale, int color) {
-  for (char ch : s) {
-    for (int row = 0; row < gfx::kGlyphH; ++row) {
-      uint8_t bits = gfx::glyph_row(uint8_t(ch), row);
-      for (int col = 0; col < gfx::kGlyphW; ++col)
-        if ((bits >> (gfx::kGlyphW - 1 - col)) & 1)
+// The boot logo uses 5x5 letters: at three pixels wide the console font
+// can't tell M from H, which matters most in the logo itself.
+struct LogoLetter {
+  char ch;
+  const char* rows[5];
+};
+constexpr LogoLetter kLogo[] = {
+    {'G', {".####", "#....", "#..##", "#...#", ".###."}}, {'L', {"#....", "#....", "#....", "#....", "#####"}},
+    {'I', {"#####", "..#..", "..#..", "..#..", "#####"}}, {'M', {"#...#", "##.##", "#.#.#", "#...#", "#...#"}},
+    {'E', {"#####", "#....", "####.", "#....", "#####"}}, {'R', {"####.", "#...#", "####.", "#..#.", "#...#"}},
+};
+
+void logo_letter(gfx::Gfx& g, char ch, int x, int y, int scale, int color) {
+  for (const auto& l : kLogo) {
+    if (l.ch != ch) continue;
+    for (int row = 0; row < 5; ++row)
+      for (int col = 0; col < 5; ++col)
+        if (l.rows[row][col] == '#')
           g.rectfill(x + col * scale, y + row * scale, x + (col + 1) * scale - 1, y + (row + 1) * scale - 1, color);
-    }
-    x += gfx::kCharW * scale;
   }
 }
 
@@ -406,7 +415,7 @@ bool Shell::update_boot(ui::Ui& ui) {
     static constexpr int kColors[7] = {29, 30, 17, 21, 28, 25, 4};
     static constexpr int kChime[7] = {24, 28, 31, 35, 36, 40, 43};
     const char* word = "GLIMMER";
-    int left = kScreenW / 2 - 7 * 16 / 2;
+    int left = kScreenW / 2 - 7 * 18 / 2;
     for (int i = 0; i < 7; ++i) {
       int start = 24 + i * 7, t = f - start;
       if (t < 0) continue;
@@ -415,9 +424,8 @@ bool Shell::update_boot(ui::Ui& ui) {
       float bounce = k < 1.f ? (1.f - k) * (1.f - k) * 60.f : 0.f;
       if (t > 14 && t < 20) bounce = -float(std::min(t - 14, 20 - t)) * 1.5f;
       int y = 40 - int(bounce);
-      char ch[2] = {word[i], 0};
-      big_text(g, ch, left + i * 16 + 1, y + 1, 4, 2);
-      big_text(g, ch, left + i * 16, y, 4, kColors[i]);
+      logo_letter(g, word[i], left + i * 18 + 1, y + 1, 3, 2);
+      logo_letter(g, word[i], left + i * 18, y, 3, kColors[i]);
       if (t == 14) audio.note(i % 3, kChime[i], 6, 5);
       if (t == 22) audio.note(i % 3, -1, 0, 0);
     }
