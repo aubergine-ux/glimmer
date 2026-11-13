@@ -308,6 +308,13 @@ LoadResult load_bytes(std::span<const uint8_t> data, Cart& out) {
 LoadResult load_file(const std::string& path, Cart& out) {
   std::vector<uint8_t> bytes;
   if (!read_file(path, bytes)) return {false, "can't read " + path};
+  // A bare .lua file is a code-only cart, which is the easiest way to start.
+  if (path.ends_with(".lua")) {
+    out = Cart();
+    out.code.assign(bytes.begin(), bytes.end());
+    if (out.code.size() > kMaxCodeBytes) return {false, "code is larger than 128 KiB"};
+    return {true, {}};
+  }
   return load_bytes(bytes, out);
 }
 

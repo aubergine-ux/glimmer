@@ -1,5 +1,6 @@
 #include <doctest.h>
 
+#include <cstdio>
 #include <random>
 
 #include "cart/cart.hpp"
@@ -150,4 +151,16 @@ TEST_CASE("carts load into and capture from console memory") {
   CHECK(b.gfx == a.gfx);
   CHECK(b.map == a.map);
   CHECK(b.palette == a.palette);
+}
+
+TEST_CASE("plain lua files load as code-only carts") {
+  std::string path = "glimmer_test_plain.lua";
+  std::string code = "[x] = 1\nfunction _draw() cls(2) end\n";
+  REQUIRE(write_file(path, {reinterpret_cast<const uint8_t*>(code.data()), code.size()}));
+  Cart c;
+  auto r = load_file(path, c);
+  std::remove(path.c_str());
+  REQUIRE_MESSAGE(r.ok, r.error);
+  CHECK(c.code == code);
+  CHECK(c.spec_version() == kSpecVersion);
 }
