@@ -21,7 +21,8 @@ GLIMMER = Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / "build" / "glimmer"
 # Demo carts shown in the README grid: (cart, frames to skip, frames to record, extra args).
 CARTS = [
     ("orbit", 30, 150, []),
-    ("hello", 0, 150, ["--press", "right@0-40", "--press", "down@30-70", "--press", "left@60-110"]),
+    ("hello", 0, 180, ["--press", "right@0-45", "--press", "up@20-50", "--press", "a@60-62",
+                       "--press", "left@70-150", "--press", "down@100-130", "--press", "a@140-142"]),
 ]
 
 
