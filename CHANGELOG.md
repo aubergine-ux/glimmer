@@ -7,6 +7,10 @@ separately in [SPEC.md](SPEC.md).
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-11-13
+
+Everything planned for Glimmer: six demo carts, translations and accessibility.
+
 ### Added
 
 - **Demo carts:**
@@ -143,7 +147,8 @@ The core runtime: everything needed to run carts, without the built-in editors y
 - **Builds and CI:** WebAssembly build, and CI on Linux, macOS, Windows and
   WebAssembly.
 
-[Unreleased]: https://github.com/aubergine-ux/glimmer/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/aubergine-ux/glimmer/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/aubergine-ux/glimmer/compare/v0.2.1...v1.0.0
 [0.2.1]: https://github.com/aubergine-ux/glimmer/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/aubergine-ux/glimmer/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/aubergine-ux/glimmer/releases/tag/v0.1.0
