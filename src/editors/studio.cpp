@@ -2,6 +2,8 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cstdio>
+#include <ctime>
 #include <filesystem>
 
 #include "editors/code_editor.hpp"
@@ -9,6 +11,7 @@
 #include "editors/music_editor.hpp"
 #include "editors/sfx_editor.hpp"
 #include "editors/sprite_editor.hpp"
+#include "cart/image.hpp"
 #include "gfx/font.hpp"
 
 namespace glim::editors {
@@ -16,6 +19,32 @@ namespace glim::editors {
 namespace {
 using input::key_from_name;
 constexpr int kMessageFrames = 150;
+constexpr int kToastFrames = 120;
+constexpr int kMaxRecordTicks = 30 * kFps;
+constexpr int kScreenshotScale = 4;
+
+// Text straight onto an RGB frame, for overlays that sit above everything.
+void rgb_text(std::vector<uint32_t>& buf, std::string_view s, int x, int y, uint32_t color, uint32_t shadow) {
+  for (int pass = 0; pass < 2; ++pass) {
+    int cx = x + (pass == 0 ? 1 : 0), cy = y + (pass == 0 ? 1 : 0);
+    for (char ch : s) {
+      for (int row = 0; row < gfx::kGlyphRows; ++row) {
+        uint8_t bits = gfx::glyph_row(uint8_t(ch), row);
+        for (int col = 0; col < gfx::kGlyphW; ++col) {
+          int px = cx + col, py = cy + row;
+          if (!((bits >> (gfx::kGlyphW - 1 - col)) & 1) || px < 0 || py < 0 || px >= kScreenW || py >= kScreenH) continue;
+          buf[size_t(py) * kScreenW + px] = pass == 0 ? shadow : color;
+        }
+      }
+      cx += gfx::kCharW;
+    }
+  }
+}
+
+void rgb_rect(std::vector<uint32_t>& buf, int x0, int y0, int x1, int y1, uint32_t color) {
+  for (int y = std::max(0, y0); y <= std::min(kScreenH - 1, y1); ++y)
+    for (int x = std::max(0, x0); x <= std::min(kScreenW - 1, x1); ++x) buf[size_t(y) * kScreenW + x] = color;
+}
 
 uint64_t seed() { return uint64_t(std::chrono::steady_clock::now().time_since_epoch().count()); }
 }  // namespace
@@ -97,11 +126,109 @@ bool Studio::save() {
 }
 
 void Studio::tick() {
+  // Capture keys work in every mode.
+  bool f3 = hotkey("f3"), f6 = hotkey("f6"), f8 = hotkey("f8");
   if (playing_) tick_game();
   else tick_editor();
+  if (f3) perf_ = !perf_;
+  if (f6) screenshot();
+  if (f8) toggle_recording();
+  if (gif_) {
+    // 30 fps: every other tick, alternating 3 and 4 centisecond delays.
+    if (gif_ticks_ % 2 == 0) gif_->add_frame(frame(), (gif_ticks_ / 2) % 3 == 2 ? 4 : 3);
+    if (++gif_ticks_ >= kMaxRecordTicks) toggle_recording();
+  }
+
+  if (++fps_ticks_ >= kFps) {
+    fps_ = int(console_.frames() - last_frames_);
+    last_frames_ = console_.frames();
+    fps_ticks_ = 0;
+  }
+  cpu_history_[size_t(cpu_head_)] = playing_ ? float(console_.cpu_usage()) : 0.f;
+  cpu_head_ = (cpu_head_ + 1) % int(cpu_history_.size());
+  if (toast_frames_ > 0) --toast_frames_;
 }
 
-const uint32_t* Studio::display() { return playing_ ? console_.display() : ui_.display(); }
+const uint32_t* Studio::frame() { return playing_ ? console_.display() : ui_.display(); }
+
+const uint32_t* Studio::display() {
+  const uint32_t* base = frame();
+  std::copy(base, base + out_.size(), out_.begin());
+  draw_overlays();
+  return out_.data();
+}
+
+std::string Studio::capture_path(const char* ext) const {
+  char stamp[32];
+  std::time_t now = std::time(nullptr);
+  std::strftime(stamp, sizeof stamp, "%Y%m%d-%H%M%S", std::localtime(&now));
+  std::string name = cart_.get_meta("title");
+  if (name.empty()) name = path_.empty() ? "glimmer" : std::filesystem::path(path_).stem().string();
+  std::filesystem::path dir = host_.capture_dir.empty() ? std::filesystem::path(".") : std::filesystem::path(host_.capture_dir);
+  std::error_code ec;
+  std::filesystem::create_directories(dir, ec);
+  return (dir / (name + "-" + stamp + ext)).string();
+}
+
+void Studio::screenshot() {
+  const uint32_t* px = frame();
+  cart::Image img(kScreenW * kScreenshotScale, kScreenH * kScreenshotScale);
+  for (int y = 0; y < img.h; ++y)
+    for (int x = 0; x < img.w; ++x) {
+      uint32_t c = px[size_t(y / kScreenshotScale) * kScreenW + x / kScreenshotScale];
+      uint8_t* o = img.at(x, y);
+      o[0] = uint8_t(c >> 16);
+      o[1] = uint8_t(c >> 8);
+      o[2] = uint8_t(c);
+      o[3] = 255;
+    }
+  std::string path = capture_path(".png");
+  bool ok = cart::write_file(path, cart::encode_png(img));
+  toast_ = ok ? "saved " + std::filesystem::path(path).filename().string() : "can't save screenshot";
+  toast_frames_ = kToastFrames;
+}
+
+void Studio::toggle_recording() {
+  if (gif_) {
+    bool ok = cart::write_file(gif_path_, gif_->finish());
+    gif_.reset();
+    toast_ = ok ? "saved " + std::filesystem::path(gif_path_).filename().string() : "can't save recording";
+    toast_frames_ = kToastFrames;
+    return;
+  }
+  gif_path_ = capture_path(".gif");
+  gif_ = std::make_unique<cart::GifWriter>(kScreenW, kScreenH, 2);
+  gif_ticks_ = 0;
+}
+
+void Studio::draw_overlays() {
+  if (gif_ && (gif_ticks_ / 20) % 2 == 0) {
+    rgb_rect(out_, kScreenW - 7, 2, kScreenW - 3, 6, 0x000000);
+    rgb_rect(out_, kScreenW - 6, 3, kScreenW - 4, 5, 0xe8534a);
+  }
+  if (toast_frames_ > 0) {
+    int w = int(toast_.size()) * gfx::kCharW + 6;
+    rgb_rect(out_, (kScreenW - w) / 2, kScreenH - 16, (kScreenW + w) / 2, kScreenH - 7, 0x1f1a33);
+    rgb_text(out_, toast_, (kScreenW - w) / 2 + 3, kScreenH - 14, 0xf2e9ff, 0x0b0a12);
+  }
+  if (perf_ && playing_) {
+    int x0 = kScreenW - 70, y0 = 2;
+    rgb_rect(out_, x0, y0, kScreenW - 2, y0 + 33, 0x0b0a12);
+    char line[40];
+    std::snprintf(line, sizeof line, "cpu %3d%%  fps %d", int(console_.cpu_usage() * 100), fps_);
+    rgb_text(out_, line, x0 + 2, y0 + 2, console_.cpu_usage() > 1.0 ? 0xe8534a : 0xf2e9ff, 0x0b0a12);
+    std::snprintf(line, sizeof line, "lua %zuk", console_.heap_bytes() / 1024);
+    rgb_text(out_, line, x0 + 2, y0 + 9, 0x8a8fa8, 0x0b0a12);
+    // Frame cost history; the faint line marks 100% of the budget.
+    int gy = y0 + 31;
+    for (int i = 0; i < 64; ++i) {
+      float v = cpu_history_[size_t((cpu_head_ + i) % 64)];
+      int h = v > 0.f ? std::clamp(int(v * 12), 1, 14) : 0;
+      if (h > 0) rgb_rect(out_, x0 + 2 + i, gy - h, x0 + 2 + i, gy, v > 1.f ? 0xe8534a : 0x6cc551);
+    }
+    rgb_rect(out_, x0 + 2, gy - 12, x0 + 65, gy - 12, 0x3a2f5b);
+  }
+}
 
 bool Studio::hotkey(const char* name) {
   // Studio hotkeys watch live key state with their own edge detection: the

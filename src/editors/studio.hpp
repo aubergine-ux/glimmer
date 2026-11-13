@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "cart/cart.hpp"
+#include "cart/gif.hpp"
 #include "editors/editor.hpp"
 #include "runtime/console.hpp"
 #include "ui/ui.hpp"
@@ -27,6 +28,7 @@ class Studio {
   struct Host {
     std::function<std::string()> get_clipboard;
     std::function<void(const std::string&)> set_clipboard;
+    std::string capture_dir = {};  // where F6 screenshots and F8 recordings go
   };
 
   Studio(Console& console, Host host);
@@ -38,6 +40,10 @@ class Studio {
 
   void play();
   void stop();
+  void screenshot();
+  void toggle_recording();
+  bool recording() const { return gif_ != nullptr; }
+  void set_capture_dir(const std::string& dir) { host_.capture_dir = dir; }
   bool playing() const { return playing_; }
   bool save();
 
@@ -67,6 +73,9 @@ class Studio {
   void draw_status_bar();
   void shortcuts();
   bool hotkey(const char* name);
+  const uint32_t* frame();
+  void draw_overlays();
+  std::string capture_path(const char* ext) const;
 
   Console& console_;
   Host host_;
@@ -85,6 +94,18 @@ class Studio {
   std::string clip_fallback_;
   Memory audio_mem_;
   std::array<bool, input::kKeyCount> hotkey_prev_{};
+
+  std::unique_ptr<cart::GifWriter> gif_;
+  std::string gif_path_;
+  int gif_ticks_ = 0;
+  std::vector<uint32_t> out_ = std::vector<uint32_t>(kScreenW * kScreenH);
+  std::string toast_;
+  int toast_frames_ = 0;
+  bool perf_ = false;
+  std::array<float, 64> cpu_history_{};
+  int cpu_head_ = 0;
+  uint64_t last_frames_ = 0;
+  int fps_ = 60, fps_ticks_ = 0;
 };
 
 }  // namespace glim::editors

@@ -66,7 +66,8 @@ App::App()
                            }
                            return text;
                          },
-                         [](const std::string& text) { SDL_SetClipboardText(text.c_str()); }}) {}
+                         [](const std::string& text) { SDL_SetClipboardText(text.c_str()); },
+                         {}}) {}
 
 App::~App() {
   save_persist();
@@ -93,6 +94,9 @@ bool App::init(const Options& opts) {
   }
   crt_on_ = opts.crt;
   load_settings();
+  // Captures land somewhere easy to find: the user's pictures folder if SDL knows it.
+  if (const char* pics = SDL_GetUserFolder(SDL_FOLDER_PICTURES)) studio_.set_capture_dir(std::string(pics) + "glimmer");
+  else if (!prefs_.empty()) studio_.set_capture_dir(prefs_ + "captures");
 
   int scale = std::max(1, opts.scale);
   if (!SDL_CreateWindowAndRenderer("Glimmer", kScreenW * scale, kScreenH * scale,
