@@ -273,9 +273,46 @@ tools that don't open a window:
   cart in `carts/`, and `tools/readme_assets.py` uses it to render every
   image in the README.
 
-On the web, `web/shell.html` hosts the canvas, the demo carts are bundled
-into the Emscripten file system, and `?cart=name` in the page URL picks which
-one to run.
+## Web and sharing
+
+The web build produces two programs from the same sources:
+
+| Program | Used for |
+|---|---|
+| `glimmer.js` / `.wasm` / `.data` | The full console, with the demo carts preloaded into the Emscripten file system. Its page is `web/shell.html`. |
+| `glimmer_player.js` | The same code as one file with the wasm inlined (`-sSINGLE_FILE`), for exported games. |
+
+**The player page:** `web/player.html` is a template. The site build fills it
+in for the hosted player at `/play/`, and `cart/html.cpp` fills it in for
+exported games, with the runtime and a base64url-packed cart inlined. The
+page gets its cart from, in order:
+
+1. a cart inlined by an export,
+2. a `#c=` share link,
+3. `?url=`,
+4. `?cart=name`.
+
+It writes the cart into the virtual file system before `main` runs, and
+starts the program with `--player`.
+
+**Touch controls:** these are HTML. The d-pad reads the finger's direction so
+it can slide between arrows, and presses reach the console through the
+exported `glim_touch()` function.
+
+**Scaling:** on screens too small for 2× integer scaling, the frontend
+switches to fractional letterboxing.
+
+**Embedding:** `embed.js` defines `<glimmer-player>`, which wraps the player
+page in an iframe.
+
+**The site:** `tools/build_site.py` assembles the landing page, `/console/`,
+`/play/` and the markdown docs rendered to HTML, and Pages deploys it on
+every push.
+
+**Native games:** `cart/bundle.cpp` appends the packed cart, its size and a
+`GLIMCART` trailer to a copy of the executable, or writes `game.glim` into a
+macOS app's Resources. At startup the frontend looks for either and switches
+the studio to player mode, which has no editors; Esc shows a pause overlay.
 
 ## Builds and CI
 

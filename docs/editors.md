@@ -58,7 +58,9 @@ animation; any key skips it.
 | `load <cart>` | Open a cart in the editors; the extension is optional |
 | `run` | Play the current cart |
 | `save [name]` | Save; a `.png` name saves a cartridge picture |
-| `export <file>` | Write a `.png` or `.glim` copy (PNGs get a label captured automatically) |
+| `export <file>` | Write a `.png`, `.html` or `.glim` copy (PNGs get a label captured automatically) |
+| `share` | Copy a link that plays the cart in any browser |
+| `bundle <name>` | Build a standalone game: the runtime with your cart inside |
 | `new` | Start a fresh cart |
 | `browse` | Pick a cart from a grid of covers |
 | `info` | Code size, packed size against the PNG limit, sprites used |
@@ -67,6 +69,15 @@ animation; any key skips it.
 
 <kbd>Tab</kbd> completes file names, and <kbd>↑</kbd> and <kbd>↓</kbd> step
 through earlier commands.
+
+### Sharing
+
+| Format | What it is |
+|---|---|
+| `share` link | The whole cart, compressed into the address of the web player, e.g. `https://armd.one/glimmer/play/#c=…`. It works for carts up to a few kilobytes packed, which covers most small games. |
+| `.html` | One self-contained web page with the runtime, your cart and on-screen touch controls. Host it anywhere or upload it to itch.io as an HTML game. A desktop release inlines the runtime so the page works offline; otherwise the page loads it from the website. |
+| `bundle` | A copy of the Glimmer program with your cart attached, which starts straight into the game. Make one on each platform you want to publish for. On macOS the result is an `.app`. In a bundled game, <kbd>Esc</kbd> pauses and <kbd>Ctrl</kbd>+<kbd>R</kbd> restarts; there are no editors. |
+| `.png` | The cartridge picture. Anyone with Glimmer can load it. |
 
 In the **cart browser**, use the arrow keys to choose, <kbd>Enter</kbd> to
 play and <kbd>E</kbd> to edit. Carts without a saved label get a cover from a

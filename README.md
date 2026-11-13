@@ -12,7 +12,7 @@
 [![Release](https://img.shields.io/github/v/release/aubergine-ux/glimmer?include_prereleases&style=flat-square&labelColor=1f1a33&color=6b4f9e)](https://github.com/aubergine-ux/glimmer/releases)
 [![License: MIT](https://img.shields.io/github/license/aubergine-ux/glimmer?style=flat-square&labelColor=1f1a33&color=1f6fb2)](LICENSE)
 [![Platforms](https://img.shields.io/badge/platforms-windows%20%7C%20macos%20%7C%20linux%20%7C%20web-2f8a3e?style=flat-square&labelColor=1f1a33)](#install)
-[![Play in browser](https://img.shields.io/badge/%E2%96%B6%20play-in%20browser-ff6fb5?style=flat-square&labelColor=1f1a33)](https://armd.one/glimmer/)
+[![Play in browser](https://img.shields.io/badge/%E2%96%B6%20play-in%20browser-ff6fb5?style=flat-square&labelColor=1f1a33)](https://armd.one/glimmer/console/)
 
 <br>
 
@@ -20,7 +20,7 @@
 
 <br><br>
 
-<a href="https://armd.one/glimmer/"><img alt="Play it in your browser" src="docs/assets/button.png" width="336"></a>
+<a href="https://armd.one/glimmer/console/"><img alt="Play it in your browser" src="docs/assets/button.png" width="336"></a>
 
 </div>
 
@@ -68,31 +68,36 @@ that *is* the game.
 - 🕹️ **Up to 4 players:** gamepads, rebindable keys, mouse and keyboard.
 - 📺 **Integer scaling and a CRT filter:** crisp pixels at any window size, or
   curved glass and scanlines at the press of <kbd>F9</kbd>.
-- 🌐 **Runs in the browser:** the same console compiled to WebAssembly.
+- 🌐 **Runs in the browser:** the same console, editors included, compiled to
+  WebAssembly.
+- 🔗 **Share anywhere:** `share` copies a link that plays your cart, `export
+  game.html` writes a single-file web game with touch controls, and `bundle`
+  builds a standalone app for itch.io.
+- 📱 **Embeddable:** drop `<glimmer-player>` into any web page.
 - 🧪 **Built to last:** a versioned [spec](SPEC.md), so carts keep working
   forever, and CI on Windows, macOS, Linux and the web.
 
-> **Coming next:** a standalone web player, an embeddable player with touch
-> controls, and one-click native game exports. See the [roadmap](#roadmap).
+> **Coming next:** six polished demo carts, accessibility options and
+> translations. See the [roadmap](#roadmap).
 
 ## 🕹️ Demo carts
 
 <table>
   <tr>
     <td align="center" width="33%">
-      <a href="https://armd.one/glimmer/?cart=sprout"><img alt="sprout" src="docs/assets/carts/sprout.gif" width="100%"></a>
+      <a href="https://armd.one/glimmer/play/?cart=sprout"><img alt="sprout" src="docs/assets/carts/sprout.gif" width="100%"></a>
       <br><b>sprout</b>: a tiny platformer with a map, flags and music
-      <br><a href="https://armd.one/glimmer/?cart=sprout">▶ play</a> · <a href="carts/sprout.glim">source</a>
+      <br><a href="https://armd.one/glimmer/play/?cart=sprout">▶ play</a> · <a href="carts/sprout.glim">source</a>
     </td>
     <td align="center" width="33%">
-      <a href="https://armd.one/glimmer/?cart=orbit"><img alt="orbit" src="docs/assets/carts/orbit.gif" width="100%"></a>
+      <a href="https://armd.one/glimmer/play/?cart=orbit"><img alt="orbit" src="docs/assets/carts/orbit.gif" width="100%"></a>
       <br><b>orbit</b>: rotation, dithering, clipping and the synth
-      <br><a href="https://armd.one/glimmer/?cart=orbit">▶ play</a> · <a href="carts/orbit.glim">source</a>
+      <br><a href="https://armd.one/glimmer/play/?cart=orbit">▶ play</a> · <a href="carts/orbit.glim">source</a>
     </td>
     <td align="center" width="33%">
-      <a href="https://armd.one/glimmer/?cart=hello"><img alt="hello" src="docs/assets/carts/hello.gif" width="100%"></a>
+      <a href="https://armd.one/glimmer/play/?cart=hello"><img alt="hello" src="docs/assets/carts/hello.gif" width="100%"></a>
       <br><b>hello</b>: the smallest useful cart
-      <br><a href="https://armd.one/glimmer/?cart=hello">▶ play</a> · <a href="carts/hello.glim">source</a>
+      <br><a href="https://armd.one/glimmer/play/?cart=hello">▶ play</a> · <a href="carts/hello.glim">source</a>
     </td>
   </tr>
 </table>
@@ -119,10 +124,19 @@ function _draw()
 end
 ```
 
-Then turn it into a shareable picture:
+Then share it:
 
 ```sh
-glimmer --export hello.lua hello.png
+glimmer --export hello.lua hello.png      # a picture that is the game
+glimmer --export hello.lua hello.html     # a web page that plays it, touch controls included
+glimmer --bundle hello.lua --out hello    # a standalone app (hello.exe on Windows)
+```
+
+Or embed it in any web page:
+
+```html
+<script src="https://armd.one/glimmer/embed.js"></script>
+<glimmer-player src="https://example.com/hello.png"></glimmer-player>
 ```
 
 ## 📦 Install
@@ -188,8 +202,8 @@ cmake --build build --config Release
 <details>
 <summary><b>🌐 Web</b></summary>
 
-Nothing to install: [play in your browser](https://armd.one/glimmer/). To build
-it yourself with [Emscripten](https://emscripten.org):
+Nothing to install: [open the console in your browser](https://armd.one/glimmer/console/).
+To build it yourself with [Emscripten](https://emscripten.org):
 
 ```sh
 emcmake cmake -S . -B build-web -DCMAKE_BUILD_TYPE=Release
@@ -252,7 +266,7 @@ today still run in every future Glimmer.
 - [x] **Core runtime:** graphics, synth, Lua, carts, PNG carts, CRT, web build
 - [x] **Built-in editors:** code, sprites, map, sound effects, music tracker
 - [x] **Shell and debugging:** boot shell, breakpoints, hot reload, GIF recording, cart browser
-- [ ] **Sharing:** web player export, embeddable player with touch controls, standalone native builds
+- [x] **Sharing:** web player export, embeddable player with touch controls, standalone native builds
 - [ ] **Demo carts and polish:** six showcase games, accessibility, translations (English and Albanian)
 
 <br>

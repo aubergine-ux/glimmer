@@ -56,6 +56,21 @@ separately in [SPEC.md](SPEC.md).
 - **Tools:** `--studio-script` drives the editors from a script, and GIF
   recordings only store what changed between frames.
 
+- **Web player:** loads carts from share links (`#c=`), URLs (`?url=`) or the
+  demos (`?cart=`), with touch controls for phones.
+- **Sharing from the shell:**
+  - `share` copies a play link.
+  - `export game.html` writes a single-file web game.
+  - `bundle` builds a standalone app; `glimmer --bundle` does the same from
+    the command line.
+- **Embedding:** the `<glimmer-player>` web component (`embed.js`) puts a cart
+  in any page.
+- **Website:** a landing page, the console at `/console/`, the player at
+  `/play/`, rendered docs and a demo gallery.
+- **Releases:** packages include the web runtime, so HTML exports work offline.
+- **Small screens:** these use fractional scaling instead of a tiny 1×
+  picture.
+
 ### Changed
 
 - **No arguments:** running `glimmer` with no cart boots into the shell, with
