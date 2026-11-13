@@ -71,6 +71,7 @@ jobs:
           case "$RUNNER_OS" in
             Linux)   cp build/glimmer web-runtime/glimmer_player.js "dist/$name/" ;;
             macOS)   cp -r build/glimmer.app "dist/$name/Glimmer.app"
+                     mkdir -p "dist/$name/Glimmer.app/Contents/Resources"
                      cp web-runtime/glimmer_player.js "dist/$name/Glimmer.app/Contents/Resources/"
                      cp -r carts "dist/$name/Glimmer.app/Contents/Resources/" ;;
             Windows) cp build/Release/glimmer.exe web-runtime/glimmer_player.js "dist/$name/" ;;
