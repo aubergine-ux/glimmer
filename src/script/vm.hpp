@@ -2,8 +2,11 @@
 
 #include <cstdint>
 #include <functional>
+#include <set>
 #include <string>
 #include <string_view>
+#include <utility>
+#include <vector>
 
 #include "audio/audio.hpp"
 #include "core/memory.hpp"
@@ -35,13 +38,33 @@ struct ScriptError {
   int line = 0;           // line in the cart's code, 0 when unknown
 };
 
+// What the debugger shows when a cart is stopped at a breakpoint.
+struct DebugVar {
+  std::string name, value;
+  std::vector<std::pair<std::string, std::string>> fields;  // first level of a table
+};
+
+struct DebugFrame {
+  std::string function;
+  int line = 0;
+  std::vector<DebugVar> vars;  // locals, then upvalues
+};
+
+struct DebugState {
+  int line = 0;  // where execution stopped
+  std::vector<DebugFrame> frames;  // innermost first
+  std::vector<DebugVar> globals;   // the cart's own globals, not the API
+};
+
+enum class StepMode { kNone, kInto, kOver, kOut };
+
 // One Lua state running a cart. Work is split into jobs (loading the chunk,
 // _init, each frame); a job that exceeds the cycle budget yields from the
 // instruction hook and resumes on the next tick, so slow carts slow down the
 // same way on every machine.
 class Vm {
  public:
-  enum class Status { kDone, kYielded, kError };
+  enum class Status { kDone, kYielded, kError, kBreak };
 
   explicit Vm(Host host);
   ~Vm();
@@ -67,6 +90,13 @@ class Vm {
   size_t heap_bytes() const { return heap_bytes_; }
   bool has_function(const char* name);
 
+  // Debugging. Breakpoints are cart line numbers. While stopped, tick() does
+  // nothing until resume_debug() picks a way to continue.
+  void set_breakpoints(std::set<int> lines);
+  bool stopped() const { return stopped_; }
+  const DebugState& debug_state() const { return debug_; }
+  void resume_debug(StepMode mode);
+
   // Called by the bindings for work done outside the VM (pixels, memory copies).
   void charge(uint64_t cycles) { cycles_ += cycles; }
   Host& host() { return host_; }
@@ -82,6 +112,10 @@ class Vm {
   void open_libs();
   void set_error(lua_State* from, int status);
   bool start_job();
+  void update_hook_mask();
+  void on_line(lua_State* L, lua_Debug* ar);
+  int cart_depth(lua_State* L) const;
+  void capture_debug(lua_State* L);
 
   Host host_;
   lua_State* L_ = nullptr;
@@ -97,6 +131,13 @@ class Vm {
   double cpu_usage_ = 0.0;
   size_t heap_bytes_ = 0;
   uint64_t rng_[2] = {1, 2};
+  std::set<int> breakpoints_;
+  StepMode step_ = StepMode::kNone;
+  int step_depth_ = 0;
+  bool stopped_ = false;
+  bool just_resumed_ = false;
+  DebugState debug_;
+  std::set<std::string> builtin_globals_;
   ScriptError error_;
 };
 

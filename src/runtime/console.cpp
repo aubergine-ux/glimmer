@@ -53,6 +53,7 @@ bool Console::run(const cart::Cart& cart, uint64_t seed) {
   error_ = {};
 
   vm_ = std::make_unique<script::Vm>(make_host());
+  vm_->set_breakpoints(breakpoints_);
   if (!vm_->load(cart_.code, seed)) {
     error_ = vm_->error();
     state_ = State::kError;
@@ -121,6 +122,7 @@ void Console::tick() {
       present();
       break;
     case script::Vm::Status::kYielded:
+    case script::Vm::Status::kBreak:
       break;
     case script::Vm::Status::kError:
       error_ = vm_->error();

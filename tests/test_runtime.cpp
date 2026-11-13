@@ -228,3 +228,40 @@ TEST_CASE("hot reload keeps runtime map changes unless the map was edited") {
   REQUIRE(con.reload(c));
   CHECK(con.gfx.mget(0, 1, 1) == 7);
 }
+
+TEST_CASE("breakpoints stop the cart and expose locals and globals") {
+  Console con;
+  cart::Cart c;
+  c.code = "score = 7\nfunction add(a, b)\n  local sum = a + b\n  return sum\nend\nfunction _update()\n  local r = add(2, 3)\n  score = score + r\nend";
+  con.set_breakpoints({4});
+  con.run(c, 1);
+  for (int i = 0; i < 4 && !con.stopped(); ++i) con.tick();
+  REQUIRE(con.stopped());
+  const auto* d = con.debug_state();
+  REQUIRE(d != nullptr);
+  CHECK(d->line == 4);
+  REQUIRE(!d->frames.empty());
+  CHECK(d->frames[0].function == "add");
+  bool saw_sum = false;
+  for (const auto& v : d->frames[0].vars) saw_sum |= v.name == "sum" && v.value == "5";
+  CHECK(saw_sum);
+  bool saw_score = false;
+  for (const auto& v : d->globals) saw_score |= v.name == "score";
+  CHECK(saw_score);
+
+  // Stopped: ticking doesn't advance.
+  uint64_t frames = con.frames();
+  con.tick();
+  CHECK(con.frames() == frames);
+
+  // Step over the return: next stop is back in _update, line 8.
+  con.resume_debug(script::StepMode::kOver);
+  con.tick();
+  REQUIRE(con.stopped());
+  CHECK(con.debug_state()->line == 8);
+
+  con.set_breakpoints({});
+  con.resume_debug(script::StepMode::kNone);
+  con.tick();
+  CHECK_FALSE(con.stopped());
+}

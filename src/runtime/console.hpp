@@ -4,6 +4,7 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <set>
 #include <string_view>
 #include <vector>
 
@@ -43,6 +44,17 @@ class Console {
   double cpu_usage() const { return vm_ ? vm_->cpu_usage() : 0.0; }
   size_t heap_bytes() const { return vm_ ? vm_->heap_bytes() : 0; }
 
+  // Debugger hooks; see script::Vm. A stopped cart doesn't advance on tick().
+  void set_breakpoints(std::set<int> lines) {
+    breakpoints_ = lines;
+    if (vm_) vm_->set_breakpoints(std::move(lines));
+  }
+  bool stopped() const { return vm_ && vm_->stopped(); }
+  const script::DebugState* debug_state() const { return vm_ ? &vm_->debug_state() : nullptr; }
+  void resume_debug(script::StepMode mode) {
+    if (vm_) vm_->resume_debug(mode);
+  }
+
   // RGB of the last completed frame; mid-frame draws never tear onto it.
   const uint32_t* display() const { return display_.data(); }
 
@@ -68,6 +80,7 @@ class Console {
   std::unique_ptr<script::Vm> vm_;
   script::ScriptError error_;
   uint64_t frames_ = 0;
+  std::set<int> breakpoints_;
   std::vector<uint32_t> display_ = std::vector<uint32_t>(kScreenW * kScreenH, 0);
 };
 
