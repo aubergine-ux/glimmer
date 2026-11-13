@@ -2,6 +2,7 @@
 #include <SDL3/SDL_main.h>
 
 #include <cstdio>
+#include <cstdlib>
 #include <string>
 #include <string_view>
 
