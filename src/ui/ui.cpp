@@ -155,13 +155,13 @@ bool Ui::button(const Rect& r, std::string_view label, bool selected, std::strin
   return hot && clicked(0);
 }
 
-bool Ui::icon_button(int x, int y, Icon ic, bool selected, std::string_view tip) {
-  Rect r{x, y, 10, 10};
+bool Ui::icon_button(int x, int y, Icon ic, bool selected, std::string_view tip, int h) {
+  Rect r{x, y, 10, h};
   bool hot = hovered(r);
   if (selected) fill(r, theme_.accent);
   else if (hot) fill(r, theme_.hot);
   int c = selected ? theme_.accent_text : (hot ? theme_.text : theme_.dim);
-  icon(ic, x + 1, y + 1 + (hot && mouse_down(0) ? 1 : 0), c);
+  icon(ic, x + 1, y + (h - 8) / 2 + (hot && mouse_down(0) ? 1 : 0), c);
   if (hot && !tip.empty()) tooltip(tip);
   return hot && clicked(0);
 }

@@ -91,7 +91,7 @@ class Ui {
 
   // Widgets. All return true on the frame they're activated.
   bool button(const Rect& r, std::string_view label, bool selected = false, std::string_view tip = {});
-  bool icon_button(int x, int y, Icon icon, bool selected = false, std::string_view tip = {});
+  bool icon_button(int x, int y, Icon icon, bool selected = false, std::string_view tip = {}, int h = 10);
   bool toggle(int x, int y, bool& value, int on_color, std::string_view tip = {});
   bool slider(const Rect& r, int& value, int lo, int hi, std::string_view tip = {});
   bool spinner(int x, int y, std::string_view label, int& value, int lo, int hi, std::string_view tip = {});
