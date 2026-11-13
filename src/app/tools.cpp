@@ -115,7 +115,11 @@ bool run_headless(const Headless& opts) {
   std::vector<float> sink(audio::kSamplesPerFrame);
   cart::GifWriter gif(kScreenW, kScreenH, 2);
   for (int f = 0; f < opts.frames && con.state() == Console::State::kRunning; ++f) {
-    for (const auto& p : presses) con.input.set_pad_button(0, p.button, f >= p.from && f < p.to);
+    // A button can have several press ranges; it's down if any of them covers this frame.
+    uint16_t down = 0;
+    for (const auto& p : presses)
+      if (f >= p.from && f < p.to) down |= uint16_t(1u << p.button);
+    for (int b = 0; b < input::kButtonCount; ++b) con.input.set_pad_button(0, b, (down >> b) & 1);
     con.tick();
     // Pull audio too, so sound code paths run exactly as they would live.
     con.audio.render(sink.data(), int(sink.size()));
