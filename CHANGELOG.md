@@ -7,6 +7,10 @@ separately in [SPEC.md](SPEC.md).
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-13
+
+The built-in editors, the shell and debugger, and sharing.
+
 ### Added
 
 - **Studio:** built-in editors with one-key switching between editing and
@@ -109,5 +113,6 @@ The core runtime: everything needed to run carts, without the built-in editors y
 - **Builds and CI:** WebAssembly build, and CI on Linux, macOS, Windows and
   WebAssembly.
 
-[Unreleased]: https://github.com/aubergine-ux/glimmer/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/aubergine-ux/glimmer/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/aubergine-ux/glimmer/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/aubergine-ux/glimmer/releases/tag/v0.1.0
