@@ -70,6 +70,9 @@ that *is* the game.
   curved glass and scanlines at the press of <kbd>F9</kbd>.
 - 🌐 **Runs in the browser:** the same console, editors included, compiled to
   WebAssembly.
+- ♿ **Accessible and translated:** rebindable controls, a high-contrast editor
+  theme, adjustable window scale, and the whole console UI in English or
+  Albanian (`lang sq`).
 - 🔗 **Share anywhere:** `share` copies a link that plays your cart, `export
   game.html` writes a single-file web game with touch controls, and `bundle`
   builds a standalone app for itch.io.
@@ -77,30 +80,48 @@ that *is* the game.
 - 🧪 **Built to last:** a versioned [spec](SPEC.md), so carts keep working
   forever, and CI on Windows, macOS, Linux and the web.
 
-> **Coming next:** six polished demo carts, accessibility options and
-> translations. See the [roadmap](#roadmap).
-
 ## 🕹️ Demo carts
+
+Every demo is written to be read: open one in the editors and follow the comments.
 
 <table>
   <tr>
     <td align="center" width="33%">
       <a href="https://armd.one/glimmer/play/?cart=sprout"><img alt="sprout" src="docs/assets/carts/sprout.gif" width="100%"></a>
-      <br><b>sprout</b>: a tiny platformer with a map, flags and music
+      <br><b>sprout</b>: a platformer: run, jump, stomp snails, find every star
       <br><a href="https://armd.one/glimmer/play/?cart=sprout">▶ play</a> · <a href="carts/sprout.glim">source</a>
     </td>
     <td align="center" width="33%">
-      <a href="https://armd.one/glimmer/play/?cart=orbit"><img alt="orbit" src="docs/assets/carts/orbit.gif" width="100%"></a>
-      <br><b>orbit</b>: rotation, dithering, clipping and the synth
-      <br><a href="https://armd.one/glimmer/play/?cart=orbit">▶ play</a> · <a href="carts/orbit.glim">source</a>
+      <a href="https://armd.one/glimmer/play/?cart=starfall"><img alt="starfall" src="docs/assets/carts/starfall.gif" width="100%"></a>
+      <br><b>starfall</b>: a vertical shooter with waves, power-ups and bombs
+      <br><a href="https://armd.one/glimmer/play/?cart=starfall">▶ play</a> · <a href="carts/starfall.glim">source</a>
     </td>
     <td align="center" width="33%">
-      <a href="https://armd.one/glimmer/play/?cart=hello"><img alt="hello" src="docs/assets/carts/hello.gif" width="100%"></a>
-      <br><b>hello</b>: the smallest useful cart
-      <br><a href="https://armd.one/glimmer/play/?cart=hello">▶ play</a> · <a href="carts/hello.glim">source</a>
+      <a href="https://armd.one/glimmer/play/?cart=crates"><img alt="crates" src="docs/assets/carts/crates.gif" width="100%"></a>
+      <br><b>crates</b>: a box-pushing puzzle with undo and par scores
+      <br><a href="https://armd.one/glimmer/play/?cart=crates">▶ play</a> · <a href="carts/crates.glim">source</a>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" width="33%">
+      <a href="https://armd.one/glimmer/play/?cart=loops"><img alt="loops" src="docs/assets/carts/loops.gif" width="100%"></a>
+      <br><b>loops</b>: a step sequencer that builds its sounds at runtime
+      <br><a href="https://armd.one/glimmer/play/?cart=loops">▶ play</a> · <a href="carts/loops.glim">source</a>
+    </td>
+    <td align="center" width="33%">
+      <a href="https://armd.one/glimmer/play/?cart=bloom"><img alt="bloom" src="docs/assets/carts/bloom.gif" width="100%"></a>
+      <br><b>bloom</b>: generative art: particles riding a flow field
+      <br><a href="https://armd.one/glimmer/play/?cart=bloom">▶ play</a> · <a href="carts/bloom.glim">source</a>
+    </td>
+    <td align="center" width="33%">
+      <a href="https://armd.one/glimmer/play/?cart=learn"><img alt="learn" src="docs/assets/carts/learn.gif" width="100%"></a>
+      <br><b>learn</b>: an interactive tutorial that teaches Glimmer
+      <br><a href="https://armd.one/glimmer/play/?cart=learn">▶ play</a> · <a href="carts/learn.glim">source</a>
     </td>
   </tr>
 </table>
+
+Two smaller examples, [hello](carts/hello.glim) and [orbit](carts/orbit.glim), show the basics and the drawing API.
 
 ## 👋 Hello, world
 
@@ -267,7 +288,7 @@ today still run in every future Glimmer.
 - [x] **Built-in editors:** code, sprites, map, sound effects, music tracker
 - [x] **Shell and debugging:** boot shell, breakpoints, hot reload, GIF recording, cart browser
 - [x] **Sharing:** web player export, embeddable player with touch controls, standalone native builds
-- [ ] **Demo carts and polish:** six showcase games, accessibility, translations (English and Albanian)
+- [x] **Demo carts and polish:** six showcase games, accessibility, translations (English and Albanian)
 
 <br>
 
