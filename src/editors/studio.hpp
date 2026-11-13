@@ -31,12 +31,17 @@ class Studio {
     std::function<std::string()> get_clipboard;
     std::function<void(const std::string&)> set_clipboard;
     std::string capture_dir = {};  // where F6 screenshots and F8 recordings go
+    std::string runtime = {};      // this program, copied by the shell's bundle command
   };
 
   Studio(Console& console, Host host);
   ~Studio();
 
   void open(const cart::Cart& cart, const std::string& path, bool show_code = true);
+  // Player mode is for published games: no editors, and Esc shows a pause
+  // overlay instead.
+  void set_player_mode(bool on) { player_ = on; }
+  bool player_mode() const { return player_; }
   void new_cart();
   // Shows the boot animation, then the shell.
   void boot();
@@ -56,6 +61,8 @@ class Studio {
   void toggle_recording();
   bool recording() const { return gif_ != nullptr; }
   void set_capture_dir(const std::string& dir) { host_.capture_dir = dir; }
+  void set_runtime(const std::string& path) { host_.runtime = path; }
+  const std::string& runtime() const { return host_.runtime; }
   bool playing() const { return playing_; }
   bool save();
   bool save_as(const std::string& path);
@@ -103,6 +110,8 @@ class Studio {
   bool playing_ = false;
   bool paused_ = false;
   bool debugging_ = false;
+  bool player_ = false;
+  bool player_paused_ = false;
   int debug_scroll_ = 0;
   std::set<std::string> debug_open_;  // expanded table variables
   bool dirty_ = false;

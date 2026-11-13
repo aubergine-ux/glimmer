@@ -282,6 +282,15 @@ void Studio::toggle_recording() {
 }
 
 void Studio::draw_overlays() {
+  if (player_ && player_paused_) {
+    // Dim the frozen game and show what the keys do.
+    for (auto& px : out_) px = (px >> 2) & 0x3F3F3F;
+    const char* lines[] = {"paused", "esc or enter: resume", "ctrl+r: restart"};
+    for (int i = 0; i < 3; ++i) {
+      int w = int(std::string_view(lines[i]).size()) * gfx::kCharW;
+      rgb_text(out_, lines[i], (kScreenW - w) / 2, 58 + i * 10, i == 0 ? 0xffd166 : 0xf2e9ff, 0x0b0a12);
+    }
+  }
   if (gif_ && (gif_ticks_ / 20) % 2 == 0) {
     rgb_rect(out_, kScreenW - 7, 2, kScreenW - 3, 6, 0x000000);
     rgb_rect(out_, kScreenW - 6, 3, kScreenW - 4, 5, 0xe8534a);
@@ -326,9 +335,30 @@ void Studio::tick_game() {
   bool ctrl = in.live_key(key_from_name("lctrl")) || in.live_key(key_from_name("rctrl")) ||
               in.live_key(key_from_name("lgui")) || in.live_key(key_from_name("rgui"));
   if (console_.state() != Console::State::kRunning) {
-    // Any key or click dismisses the error screen.
+    // Any key or click dismisses the error screen; published games restart.
     in.begin_frame();
-    if (in.any_key_pressed() || in.mouse().buttons || esc) stop();
+    if (in.any_key_pressed() || in.mouse().buttons || esc) {
+      if (player_) play();
+      else stop();
+    }
+    return;
+  }
+  if (player_) {
+    if (esc) {
+      player_paused_ = !player_paused_;
+      in.release_all();
+    }
+    if (ctrl && r) {
+      player_paused_ = false;
+      play();
+      return;
+    }
+    if (player_paused_) {
+      in.begin_frame();
+      if (in.keyp(key_from_name("return")) || in.mouse_pressed(0)) player_paused_ = false;
+      return;
+    }
+    console_.tick();
     return;
   }
   if (esc) {
