@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cstdio>
+#include <cstdlib>
 
 #include "editors/sheet.hpp"
 #include "editors/studio.hpp"
