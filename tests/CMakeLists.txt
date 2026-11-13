@@ -9,5 +9,10 @@ add_executable(glimmer_tests
 )
 target_compile_options(glimmer_tests PRIVATE ${GLIMMER_WARNINGS})
 target_link_libraries(glimmer_tests PRIVATE glimmer_gfx glimmer_audio glimmer_input glimmer_runtime glimmer_doctest)
-target_compile_definitions(glimmer_tests PRIVATE GLIMMER_TEST_DATA="${CMAKE_CURRENT_SOURCE_DIR}/data")
-add_test(NAME glimmer_tests COMMAND glimmer_tests)
+if(EMSCRIPTEN)
+  # Tests read nothing from disk, so node can run them directly.
+  target_link_options(glimmer_tests PRIVATE -sENVIRONMENT=node -sSTACK_SIZE=1048576)
+  add_test(NAME glimmer_tests COMMAND node $<TARGET_FILE:glimmer_tests>)
+else()
+  add_test(NAME glimmer_tests COMMAND glimmer_tests)
+endif()

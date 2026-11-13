@@ -17,10 +17,16 @@ else()
   set(GLIMMER_WARNINGS -Wall -Wextra -Wpedantic -Wshadow -Wno-sign-compare)
 endif()
 
+if(EMSCRIPTEN)
+  # Lua raises errors as C++ exceptions, so the web build needs real EH.
+  add_compile_options(-fwasm-exceptions)
+  add_link_options(-fwasm-exceptions -sALLOW_MEMORY_GROWTH=1)
+endif()
+
 add_subdirectory(third_party)
 add_subdirectory(src)
 
-if(GLIMMER_BUILD_TESTS AND NOT EMSCRIPTEN)
+if(GLIMMER_BUILD_TESTS)
   enable_testing()
   add_subdirectory(tests)
 endif()
