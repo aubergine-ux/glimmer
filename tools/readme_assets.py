@@ -12,7 +12,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-from PIL import Image, ImageDraw
+from PIL import Image, ImageChops, ImageDraw
 
 ROOT = Path(__file__).resolve().parent.parent
 ASSETS = ROOT / "docs" / "assets"
@@ -46,6 +46,17 @@ def banner(tmp):
         rounded(img, 24).save(ASSETS / f"banner-{theme}.png", optimize=True)
 
 
+def button(tmp):
+    shot = tmp / "button.png"
+    headless(ASSETS / "src" / "button.glim", "--frames", "4", "--screenshot", str(shot))
+    img = Image.open(shot).convert("RGB").crop((0, 0, 112, 24)).resize((336, 72), Image.NEAREST)
+    # Anything matching the corner pixel is background and becomes transparent.
+    background = Image.new("RGB", img.size, img.getpixel((0, 0)))
+    alpha = ImageChops.difference(img, background).convert("L").point(lambda v: 255 if v else 0)
+    img.putalpha(alpha)
+    img.save(ASSETS / "button.png", optimize=True)
+
+
 def hero():
     headless(ROOT / "carts" / "orbit.glim", "--frames", "420", "--record-from", "60",
              "--record", str(ASSETS / "hero.gif"))
@@ -65,6 +76,7 @@ def main():
     with tempfile.TemporaryDirectory() as t:
         tmp = Path(t)
         banner(tmp)
+        button(tmp)
         hero()
         carts(tmp)
     for f in sorted(ASSETS.rglob("*")):

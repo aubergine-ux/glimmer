@@ -1,0 +1,27 @@
+glimmer cart 1
+[meta]
+title = button
+spec = 1
+[code]
+-- button.glim: the "play in your browser" button for the README.
+-- tools/readme_assets.py crops the top-left 112x24 pixels and turns the
+-- background color transparent, so one image works on light and dark pages.
+
+function _draw()
+  cls(0)
+
+  local body, edge, shine = 29, 9, 30
+  rectfill(2, 1, 109, 21, edge)
+  rectfill(1, 2, 110, 20, edge)
+  rectfill(3, 2, 108, 19, body)
+  rectfill(2, 3, 109, 18, body)
+  line(4, 3, 107, 3, shine)
+  line(3, 4, 3, 6, shine)
+
+  -- play triangle
+  trifill(10, 7, 10, 15, 15, 11, 31)
+
+  local label = "PLAY IN YOUR BROWSER"
+  print(label, 21, 10, edge)
+  print(label, 20, 9, 31)
+end
