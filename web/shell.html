@@ -37,6 +37,11 @@
     };
     // Browsers only start audio after a user gesture.
     window.addEventListener('pointerdown', function () { canvas.focus(); });
+    // Keep editor shortcuts (run, save, undo, find, tabs...) away from the browser.
+    window.addEventListener('keydown', function (e) {
+      if ((e.ctrlKey || e.metaKey) && /^[a-z0-9/]$/i.test(e.key)) e.preventDefault();
+      if (e.key === 'Tab' || e.key === 'F1' || e.key === 'F7' || e.key === 'F9') e.preventDefault();
+    }, true);
   </script>
   {{{ SCRIPT }}}
 </body>
