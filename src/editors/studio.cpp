@@ -7,6 +7,7 @@
 #include <filesystem>
 
 #include "editors/code_editor.hpp"
+#include "editors/shell.hpp"
 #include "editors/map_editor.hpp"
 #include "editors/music_editor.hpp"
 #include "editors/sfx_editor.hpp"
@@ -22,6 +23,26 @@ constexpr int kMessageFrames = 150;
 constexpr int kToastFrames = 120;
 constexpr int kMaxRecordTicks = 30 * kFps;
 constexpr int kScreenshotScale = 4;
+constexpr int kShellTab = 0;
+constexpr int kCodeTab = 1;
+
+constexpr const char* kStarterCode = R"lua(-- a new glimmer cart
+-- ctrl+r runs it, esc comes back here.
+
+function _init()
+  t0 = 0
+end
+
+function _update()
+  t0 = t0 + 1
+end
+
+function _draw()
+  cls(1)
+  local msg = "hello!"
+  print(msg, 128 - textwidth(msg) / 2, 68 + sin(t0 / 60) * 4, 17)
+end
+)lua";
 
 // Text straight onto an RGB frame, for overlays that sit above everything.
 void rgb_text(std::vector<uint32_t>& buf, std::string_view s, int x, int y, uint32_t color, uint32_t shadow) {
@@ -51,6 +72,7 @@ uint64_t seed() { return uint64_t(std::chrono::steady_clock::now().time_since_ep
 
 Studio::Studio(Console& console, Host host)
     : console_(console), host_(std::move(host)), ui_(console.input) {
+  editors_.push_back(std::make_unique<Shell>(*this));
   editors_.push_back(std::make_unique<CodeEditor>(*this));
   editors_.push_back(std::make_unique<SpriteEditor>(*this));
   editors_.push_back(std::make_unique<MapEditor>(*this));
@@ -60,9 +82,21 @@ Studio::Studio(Console& console, Host host)
 
 Studio::~Studio() = default;
 
-CodeEditor& Studio::code_editor() { return static_cast<CodeEditor&>(*editors_[0]); }
+CodeEditor& Studio::code_editor() { return static_cast<CodeEditor&>(*editors_[kCodeTab]); }
+Shell& Studio::shell() { return static_cast<Shell&>(*editors_[kShellTab]); }
 
-void Studio::open(const cart::Cart& cart, const std::string& path) {
+void Studio::new_cart() {
+  cart::Cart c;
+  c.code = kStarterCode;
+  open(c, "", false);
+}
+
+void Studio::boot() {
+  shell().boot();
+  select_editor(kShellTab);
+}
+
+void Studio::open(const cart::Cart& cart, const std::string& path, bool show_code) {
   if (playing_ || paused_) {
     playing_ = true;
     stop();
@@ -71,7 +105,7 @@ void Studio::open(const cart::Cart& cart, const std::string& path) {
   path_ = path;
   dirty_ = false;
   for (auto& e : editors_) e->reset();
-  active_ = 0;
+  if (show_code) active_ = kCodeTab;
   sync_audio();
 }
 
@@ -116,7 +150,7 @@ void Studio::resume() {
   if (!console_.reload(cart_)) {
     const auto& e = console_.error();
     code_editor().show_error(e.line, e.message);
-    select_editor(0);
+    select_editor(kCodeTab);
     message("can't resume, line " + std::to_string(e.line) + ": " + e.message, true);
     return;
   }
@@ -133,7 +167,7 @@ void Studio::stop() {
   if (crashed) {
     const auto& e = console_.error();
     code_editor().show_error(e.line, e.message);
-    select_editor(0);
+    select_editor(kCodeTab);
     message("runtime error on line " + std::to_string(e.line) + ": " + e.message, true);
   }
   console_.stop();
@@ -141,8 +175,16 @@ void Studio::stop() {
   sync_audio();
 }
 
+bool Studio::save_as(const std::string& path) {
+  std::string old = path_;
+  path_ = path;
+  if (save()) return true;
+  path_ = old;
+  return false;
+}
+
 bool Studio::save() {
-  std::string target = path_.empty() ? "untitled.glim" : path_;
+  std::string target = path_.empty() ? (shell().dir() / "untitled.glim").string() : path_;
   auto r = cart::save_file(target, cart_);
   if (!r.ok) {
     message(r.error, true);
@@ -367,6 +409,10 @@ void Studio::tick_editor() {
   ui_.begin_frame();
   shortcuts();
   if (playing_) return;
+  if (shell().booting()) {
+    std::copy(cart_.palette.begin(), cart_.palette.end(), ui_.mem().data() + addr::kPalette);
+    if (shell().update_boot(ui_)) return;
+  }
   if (paused_ && ((esc && !wants_escape) || (console_.input.ctrl() && console_.input.keyp(key_from_name("return"))))) {
     resume();
     if (playing_) return;

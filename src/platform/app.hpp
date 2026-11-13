@@ -34,6 +34,7 @@ class App {
  private:
   void load_cart(const std::string& path, bool play);
   void new_cart();
+  std::string carts_dir() const;
   void draw();
   void toggle_fullscreen();
   void save_persist();

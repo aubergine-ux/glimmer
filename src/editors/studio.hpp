@@ -15,6 +15,7 @@
 namespace glim::editors {
 
 class CodeEditor;
+class Shell;
 
 // The workspace around a cart: the editor tabs, the cart being edited, and
 // switching between editing and playing. Editors change `cart()`; playing
@@ -34,7 +35,10 @@ class Studio {
   Studio(Console& console, Host host);
   ~Studio();
 
-  void open(const cart::Cart& cart, const std::string& path);
+  void open(const cart::Cart& cart, const std::string& path, bool show_code = true);
+  void new_cart();
+  // Shows the boot animation, then the shell.
+  void boot();
   void tick();
   const uint32_t* display();
 
@@ -50,6 +54,7 @@ class Studio {
   void set_capture_dir(const std::string& dir) { host_.capture_dir = dir; }
   bool playing() const { return playing_; }
   bool save();
+  bool save_as(const std::string& path);
 
   cart::Cart& cart() { return cart_; }
   cart::Cart*& cart_ref() { return cart_ptr_; }
@@ -69,6 +74,7 @@ class Studio {
   void select_editor(int index);
   int active_editor() const { return active_; }
   CodeEditor& code_editor();
+  Shell& shell();
 
  private:
   void tick_editor();

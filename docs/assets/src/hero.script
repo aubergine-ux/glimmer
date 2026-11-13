@@ -12,7 +12,7 @@ key enter
 type circfill(p.x + 4, p.y - 3, 1, 17)
 wait 50
 shot @code
-key alt+2
+key alt+3
 mouse 150 30 10
 click 140 12
 wait 20
@@ -23,7 +23,7 @@ mouse 70 76 10
 click 80 76
 wait 40
 shot @sprites
-key alt+3
+key alt+4
 wait 20
 mouse 60 99 10
 rclick 60 99
@@ -32,7 +32,7 @@ drag 130 52 200 52 30
 drag 200 52 200 76 15
 wait 30
 shot @map
-key alt+5
+key alt+6
 wait 15
 key space
 wait 120

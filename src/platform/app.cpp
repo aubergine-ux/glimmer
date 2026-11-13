@@ -5,6 +5,7 @@
 #include <filesystem>
 
 #include "cart/image.hpp"
+#include "editors/shell.hpp"
 
 namespace glim::platform {
 
@@ -37,23 +38,6 @@ std::string read_text(const std::string& path) {
   return std::string(bytes.begin(), bytes.end());
 }
 
-constexpr const char* kStarterCode = R"lua(-- a new glimmer cart
--- ctrl+r runs it, esc comes back here.
-
-function _init()
-  t0 = 0
-end
-
-function _update()
-  t0 = t0 + 1
-end
-
-function _draw()
-  cls(1)
-  local msg = "hello!"
-  print(msg, 128 - textwidth(msg) / 2, 68 + sin(t0 / 60) * 4, 17)
-end
-)lua";
 
 }  // namespace
 
@@ -123,6 +107,7 @@ bool App::init(const Options& opts) {
   console_.on_log = [](std::string_view s) { SDL_Log("%.*s", int(s.size()), s.data()); };
   console_.on_persist = [this] { persist_dirty_ = true; };
 
+  studio_.shell().set_dir(carts_dir());
   if (opts.fullscreen) toggle_fullscreen();
   if (opts.cart_path.empty()) new_cart();
   else load_cart(opts.cart_path, true);
@@ -150,10 +135,26 @@ void App::save_settings() {
 }
 
 void App::new_cart() {
-  cart::Cart c;
-  c.code = kStarterCode;
-  studio_.open(c, "");
+  studio_.new_cart();
+  studio_.boot();
   SDL_SetWindowTitle(window_, "Glimmer");
+}
+
+std::string App::carts_dir() const {
+  // Next to the executable when a release ships its carts there, otherwise
+  // in the user data folder.
+#ifdef __EMSCRIPTEN__
+  return "/carts";
+#else
+  std::error_code ec;
+  if (const char* base = SDL_GetBasePath()) {
+    for (const char* rel : {"carts", "../carts", "../../carts", "../Resources/carts"}) {
+      auto p = std::filesystem::path(base) / rel;
+      if (std::filesystem::is_directory(p, ec)) return std::filesystem::weakly_canonical(p, ec).string();
+    }
+  }
+  return prefs_.empty() ? std::string(".") : prefs_ + "carts";
+#endif
 }
 
 void App::load_cart(const std::string& path, bool play) {
