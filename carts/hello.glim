@@ -1,0 +1,37 @@
+glimmer cart 1
+[meta]
+title = hello
+author = glimmer
+spec = 1
+[code]
+-- hello.glim: move the star with the arrow keys, press z to chirp.
+
+x, y = 128, 72
+trail = {}
+
+function _update()
+  if btn("left") then x = x - 1.5 end
+  if btn("right") then x = x + 1.5 end
+  if btn("up") then y = y - 1.5 end
+  if btn("down") then y = y + 1.5 end
+  if btnp("a") then sfx(0) end
+
+  add(trail, {x = x, y = y, life = 20})
+  for p in all(trail) do
+    p.life = p.life - 1
+    if p.life <= 0 then del(trail, p) end
+  end
+end
+
+function _draw()
+  cls(1)
+  for p in all(trail) do
+    -- fade from pink to violet as particles age
+    pset(p.x + rnd(3) - 1, p.y + rnd(3) - 1, p.life > 10 and 30 or 3)
+  end
+  circfill(x, y, 3, 17)
+  circ(x, y, 5 + sin(t()) * 1.5, 18)
+  print("hello, glimmer!", 98, 20, 5)
+end
+[sfx]
+0200000058185c185f1464b00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
