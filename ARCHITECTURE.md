@@ -1,16 +1,16 @@
 # Architecture
 
-Glimmer is a small C++20 codebase built as a stack of static libraries. Only
-the bottom layers are shown here; the editors (Milestone 2) and shell
-(Milestone 3) will sit on top of `runtime`.
+Glimmer is a small C++20 codebase built as a stack of static libraries.
 
 ```
             ┌────────────────────────────┐
-            │  app       (glimmer exe)   │  CLI, headless tools
+            │  app       (glimmer exe)   │  CLI, headless and scripted tools
             ├────────────────────────────┤
             │  platform  (SDL3)          │  window, audio device, gamepads, CRT
             ├────────────────────────────┤
-            │  runtime   Console         │  boots carts, ticks frames, error screen
+            │  editors   Studio + tabs   │  code, sprites, map, sound, music
+            ├──────────────┬─────────────┤
+            │  ui          │  runtime    │  immediate-mode widgets │ Console
             ├──────────────┬─────────────┤
             │  script      │  cart       │  Lua VM + API  │  file formats
             ├──────┬───────┼──────┬──────┤
@@ -104,9 +104,13 @@ of RAM, and an optional label image. There are three encodings:
 `load_file` also accepts a bare `.lua` file as a code-only cart, which is
 the gentlest way to start.
 
-`gif.cpp` is a small animated GIF encoder for recordings. Every console frame
-fits in a 32-color local table, so each frame is 5-bit LZW and nothing needs
-quantizing.
+`gif.cpp` is a small animated GIF encoder for recordings:
+
+- **Colors:** every console frame fits in a 32-color local table, so each
+  frame is 5-bit LZW and nothing needs quantizing.
+- **Changed areas only:** a frame stores just the rectangle that changed, and
+  identical frames lengthen the previous frame's delay. That keeps editor
+  recordings small.
 
 ## script
 
@@ -149,6 +153,63 @@ A runtime error stops audio and draws an error screen with the message, cart
 line and traceback, using a clean palette so the cart's palette tricks can't
 hide it.
 
+## ui
+
+`ui::Ui` is an immediate-mode toolkit for the 256×144 screen. It has its own
+`Memory` and `Gfx`, so the editors draw with the same rasterizer as carts
+without touching the cart's RAM.
+
+- **Widgets:** each widget is a function that draws itself and returns what
+  happened this frame (`button`, `icon_button`, `spinner`, `slider`,
+  `text_field`, `palette`).
+- **Mouse capture:** a drag that starts on a widget keeps going when the
+  pointer leaves it.
+- **Popups:** `begin_popup`/`end_popup` stop clicks from reaching widgets
+  underneath.
+- **Themes:** colors come from a `Theme` of palette indices, so a theme is
+  pure data. A high-contrast theme exists for accessibility.
+- **Icons:** drawn from ASCII art in `icons.cpp`, like the font.
+- **Cursor:** a software cursor is drawn into the frame, so it scales with the
+  screen and shows up in recordings.
+- **Palette:** the editor framebuffer uses the cart's RGB palette, so art is
+  always shown in the colors the game will use.
+
+## editors
+
+`Studio` owns the cart being edited and switches between editing and
+playing.
+
+- **Editing a copy:** editors change `Studio::cart()`. Running copies that
+  cart into the console, so a running game can never corrupt its own source.
+- **Hotkeys:** Esc, F7 and Ctrl+R watch live key state with their own edge
+  detection. The cart's input is only latched at frame starts, which never
+  happens if the cart crashes while booting.
+- **Crashes:** the code editor opens on the failing line, found from the
+  error's line number.
+- **Sound previews:** these play the edited cart's sound data, which
+  `Studio::sync_audio` copies into a scratch `Memory` every frame.
+
+Each editor is an `Editor` subclass whose `update()` handles input and draws
+in one pass. Every editor has its own `History`, a diff-based undo stack:
+
+- `begin()` snapshots a region of the cart (code, gfx, map, sfx, …).
+- `commit()` stores only the changed bytes, after trimming the common prefix
+  and suffix.
+- An open step can absorb a burst of edits, which is how typing becomes a
+  single undo step.
+
+**Copy and paste:** copies are text with a `glimmer <kind>` header
+(`clipboard.cpp`). They go through the system clipboard, so they work
+between carts and between Glimmer windows.
+
+| Editor | Notes |
+|---|---|
+| `CodeEditor` | Works directly on the cart's code string, with a line index and per-line lexer state rebuilt only when the text changes. Tabs are `--8<-- name` marker comments. Autocomplete and signature hints come from `api_docs.cpp`, which a test keeps in sync with the functions the VM actually registers. |
+| `SpriteEditor` | Edits a 1×1, 2×2 or 4×4 sprite block. Shape tools redraw from a snapshot every frame for live previews. Selections lift into a floating layer that can be dragged and dropped. |
+| `MapEditor` | Three zoom levels sample sprite pixels, so the quarter-zoom view shows the whole map. Auto-tiling takes the tile for each cell from a 4-bit neighbour mask within a 4×4 block (see [editor guide](docs/editors.md#auto-tiling)). |
+| `SfxEditor` | Draws steps, interpolating between mouse samples so fast drags leave no gaps, and plays each edited step on channel 3. |
+| `MusicEditor` | A tracker over the pattern table, showing the notes of each channel's sound effect. It has piano and keyboard note entry, and the view follows playback through the audio status. |
+
 ## platform
 
 `platform::App` is the SDL3 frontend. It uses SDL's main-callbacks API, which
@@ -176,6 +237,9 @@ tools that don't open a window:
 
 - `--export IN OUT` converts between formats. A cart with no label gets one
   captured from a short run.
+- `--studio-script FILE [CART]` drives the editors with scripted mouse and
+  keyboard actions (`click`, `drag`, `type`, `key ctrl+s`, `shot`, `record`).
+  The README's hero GIF is one of these scripts: `docs/assets/src/hero.script`.
 - `--headless CART` runs a cart, optionally holding buttons on a schedule
   (`--press a@30-60`), saving a screenshot (`--crt` for the filtered 4×
   version) or recording a GIF (`--record`). CI uses it to smoke-test every
@@ -204,3 +268,4 @@ one to run.
 | audio | Pitch accuracy, sample-exact note starts, click-free volume changes, loops, music flow, buffer-size independence |
 | cart | Text, packed and PNG round trips, corrupt-data detection, size limits, `.lua` carts, lossless GIF frames |
 | runtime | Callback order, the error screen and line numbers, budget spill, infinite loops, coroutines, the sandbox, the standard helpers |
+| editors | Undo history, clipboard formats, the Lua lexer, API docs coverage, and each editor driven through real input events (typing, indentation, tabs, error navigation, flips, auto-tiling, note entry) |

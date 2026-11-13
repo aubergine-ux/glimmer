@@ -7,6 +7,47 @@ separately in [SPEC.md](SPEC.md).
 
 ## [Unreleased]
 
+### Added
+
+- **Studio:** built-in editors with one-key switching between editing and
+  playing, per-editor undo/redo, and copy/paste through the system clipboard.
+- **Code editor:**
+  - Syntax highlighting.
+  - Tabs.
+  - Find and replace.
+  - Autocomplete.
+  - Live signature hints.
+  - An F1 API reference.
+  - Smart indentation.
+  - The crash line highlighted after a runtime error.
+- **Sprite editor:**
+  - Tools: pencil, fill, line, rectangle, circle, select/move and picker.
+  - Flip and rotate.
+  - Sprite flags.
+  - Onion skinning.
+  - Animation preview.
+  - Zoom.
+- **Map editor:**
+  - 4 layers.
+  - Multi-tile stamps.
+  - Rectangle and flood fill.
+  - Auto-tiling.
+  - Screen guides.
+  - A whole-map view.
+- **Sound editor:** drawn pitch and volume, wave and effect pens, custom
+  wavetables, and instant preview.
+- **Music tracker:** pattern flags, piano and keyboard note entry, and
+  playback that follows the music.
+- **`sprout` demo cart:** a tiny platformer.
+- **Tools:** `--studio-script` drives the editors from a script, and GIF
+  recordings only store what changed between frames.
+
+### Changed
+
+- **No arguments:** running `glimmer` with no cart opens the editors on a
+  starter cart.
+- **Quitting:** Esc now returns to the editors; Ctrl+Q quits.
+
 ## [0.1.0] - 2026-11-13
 
 The core runtime: everything needed to run carts, without the built-in editors yet.

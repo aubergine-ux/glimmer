@@ -16,7 +16,7 @@
 
 <br>
 
-<img alt="The orbit demo cart running in Glimmer" src="docs/assets/hero.gif" width="640">
+<img alt="Editing the sprout cart in Glimmer's code, sprite, map and music editors, then playing it" src="docs/assets/hero.gif" width="640">
 
 <br><br>
 
@@ -27,7 +27,7 @@
 <br>
 
 Glimmer is an open-source **fantasy console**: a pretend retro computer with
-deliberately tight limits and everything you need to make a game inside it.
+deliberately tight limits and everything you need to make a game built in.
 You get 256×144 pixels, 32 colors, 4 sound channels and a fixed CPU budget,
 and you write the game in Lua. The limits are the fun part. They keep games
 small enough to finish, and because every machine runs a cart exactly the
@@ -36,6 +36,16 @@ that *is* the game.
 
 ## ✨ Features
 
+- 🛠️ **Every tool built in:** code, sprite, map, sound and music editors run
+  inside the console itself. You can jump between editing and playing with one
+  key, and undo, redo, copy and paste work everywhere, even between carts.
+- ⌨️ **A code editor that helps:** syntax highlighting, autocomplete, live
+  signature hints, an F1 API reference, find and replace, tabs, and crashes
+  that land you on the failing line.
+- 🗺️ **Map and sprite tools:** auto-tiling, layers, multi-tile stamps, onion
+  skinning, animation preview and zoom.
+- 🎵 **A tracker:** compose songs with a piano keyboard, draw sound effects
+  step by step, and design your own wavetables.
 - 🎨 **Pixel-perfect graphics:** sprites you can flip, stretch and rotate, a
   4-layer tile map, shapes, fill patterns, clipping, a camera, palette swaps,
   and a built-in pixel font.
@@ -54,21 +64,26 @@ that *is* the game.
 - 🧪 **Built to last:** a versioned [spec](SPEC.md), so carts keep working
   forever, and CI on Windows, macOS, Linux and the web.
 
-> **Coming next:** built-in code, sprite, map, sound and music editors, a
-> console shell, a debugger, and a cart browser. See the [roadmap](#roadmap).
+> **Coming next:** a console shell, a debugger, hot reload, GIF recording and a
+> cart browser. See the [roadmap](#roadmap).
 
 ## 🕹️ Demo carts
 
 <table>
   <tr>
-    <td align="center" width="50%">
+    <td align="center" width="33%">
+      <a href="https://armd.one/glimmer/?cart=sprout"><img alt="sprout" src="docs/assets/carts/sprout.gif" width="100%"></a>
+      <br><b>sprout</b>: a tiny platformer with a map, flags and music
+      <br><a href="https://armd.one/glimmer/?cart=sprout">▶ play</a> · <a href="carts/sprout.glim">source</a>
+    </td>
+    <td align="center" width="33%">
       <a href="https://armd.one/glimmer/?cart=orbit"><img alt="orbit" src="docs/assets/carts/orbit.gif" width="100%"></a>
-      <br><b>orbit</b>: a tour of rotation, dithering, clipping and the synth
+      <br><b>orbit</b>: rotation, dithering, clipping and the synth
       <br><a href="https://armd.one/glimmer/?cart=orbit">▶ play</a> · <a href="carts/orbit.glim">source</a>
     </td>
-    <td align="center" width="50%">
+    <td align="center" width="33%">
       <a href="https://armd.one/glimmer/?cart=hello"><img alt="hello" src="docs/assets/carts/hello.gif" width="100%"></a>
-      <br><b>hello</b>: the smallest useful cart; move a star, make it burst
+      <br><b>hello</b>: the smallest useful cart
       <br><a href="https://armd.one/glimmer/?cart=hello">▶ play</a> · <a href="carts/hello.glim">source</a>
     </td>
   </tr>
@@ -76,8 +91,9 @@ that *is* the game.
 
 ## 👋 Hello, world
 
-A whole game is a couple of functions. Save this as `hello.lua` and run
-`glimmer hello.lua`:
+A whole game is a couple of functions. Run `glimmer`, type this into the code
+editor and press <kbd>Ctrl</kbd>+<kbd>R</kbd>. Or save it as `hello.lua` and
+run `glimmer hello.lua`:
 
 ```lua
 x = 128
@@ -181,12 +197,14 @@ python3 -m http.server -d build-web   # then open http://localhost:8000/glimmer.
 | Move | arrow keys or d-pad |
 | A / B / X / Y | <kbd>Z</kbd> <kbd>X</kbd> <kbd>A</kbd> <kbd>S</kbd> |
 | L / R | <kbd>Q</kbd> <kbd>W</kbd> |
+| Editors / back to the game | <kbd>Esc</kbd> / <kbd>Ctrl</kbd>+<kbd>R</kbd> |
+| Save | <kbd>Ctrl</kbd>+<kbd>S</kbd> |
 | CRT filter | <kbd>F9</kbd> |
 | Fullscreen | <kbd>F11</kbd> |
-| Reload cart | <kbd>Ctrl</kbd>+<kbd>R</kbd> |
-| Quit | <kbd>Esc</kbd> |
+| Quit | <kbd>Ctrl</kbd>+<kbd>Q</kbd> |
 
-Drop a `.glim` or `.png` cart onto the window to load it.
+Drop a `.glim`, `.png` or `.lua` cart onto the window to load it. The
+[editor guide](docs/editors.md) lists every tool and shortcut.
 
 ## 📐 The console
 
@@ -212,6 +230,7 @@ today still run in every future Glimmer.
 | Document | What it covers |
 |---|---|
 | [API reference](docs/api.md) | Every function, with examples |
+| [Editor guide](docs/editors.md) | Every tool and shortcut in the built-in editors |
 | [Console spec](SPEC.md) | The virtual hardware, memory map and cart formats |
 | [Architecture](ARCHITECTURE.md) | How the C++ is organised, system by system |
 | [Contributing](CONTRIBUTING.md) | Building, testing and code style |
@@ -220,7 +239,7 @@ today still run in every future Glimmer.
 ## 🗺️ Roadmap
 
 - [x] **Core runtime:** graphics, synth, Lua, carts, PNG carts, CRT, web build
-- [ ] **Built-in editors:** code, sprites, map, sound effects, music tracker
+- [x] **Built-in editors:** code, sprites, map, sound effects, music tracker
 - [ ] **Shell and debugging:** boot shell, breakpoints, hot reload, GIF recording, cart browser
 - [ ] **Sharing:** web player export, embeddable player with touch controls, standalone native builds
 - [ ] **Demo carts and polish:** six showcase games, accessibility, translations (English and Albanian)
