@@ -16,6 +16,7 @@ glimmer_module(script SOURCES script/vm.cpp script/api.cpp script/prelude.cpp
 glimmer_module(runtime SOURCES runtime/console.cpp DEPS glimmer_script glimmer_cart)
 
 glimmer_module(crt SOURCES platform/crt.cpp)
+glimmer_module(ui SOURCES ui/ui.cpp ui/icons.cpp DEPS glimmer_gfx glimmer_input)
 
 if(GLIMMER_BUILD_APP)
   if(EMSCRIPTEN OR GLIMMER_FETCH_SDL)
