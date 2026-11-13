@@ -102,9 +102,13 @@ glimmer --export hello.lua hello.png
 
 ## 📦 Install
 
-Prebuilt binaries will be attached to [releases](https://github.com/aubergine-ux/glimmer/releases).
-Until then, building takes about a minute. You need CMake 3.24+ and a C++20
-compiler.
+**Download** a ready-to-run build for Windows, macOS or Linux from
+[releases](https://github.com/aubergine-ux/glimmer/releases/latest). Unzip it
+and drop a cart from `carts/` onto the window. The macOS app isn't signed yet,
+so the first time, right-click it and choose **Open**.
+
+**Build from source** if you prefer. It takes about a minute and needs CMake
+3.24+ and a C++20 compiler.
 
 <details>
 <summary><b>🐧 Linux</b></summary>
