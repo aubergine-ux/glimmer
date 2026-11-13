@@ -134,7 +134,7 @@ void Shell::cmd_help() {
       {"load <cart>", "open a cart in the editors"},
       {"run", "play the current cart"},
       {"save [name]", "save the cart (.glim, or .png)"},
-      {"export <file>", "write a .png or .glim copy"},
+      {"export <file>", "write a .png, .html or .glim copy"},
       {"new", "start a fresh cart"},
       {"browse", "pick a cart by its cover"},
       {"info", "sizes and limits of this cart"},

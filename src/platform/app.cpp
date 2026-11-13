@@ -354,6 +354,16 @@ bool App::iterate() {
 }
 
 void App::draw() {
+  // Integer scaling keeps pixels perfectly square, but on screens too small
+  // for 2x (phones) a 1x picture would be tiny, so fill the space instead.
+  int ow = 0, oh = 0;
+  SDL_GetCurrentRenderOutputSize(renderer_, &ow, &oh);
+  bool small = ow < kScreenW * 2 || oh < kScreenH * 2;
+  if (small != small_output_) {
+    small_output_ = small;
+    SDL_SetRenderLogicalPresentation(renderer_, kScreenW, kScreenH,
+                                     small ? SDL_LOGICAL_PRESENTATION_LETTERBOX : SDL_LOGICAL_PRESENTATION_INTEGER_SCALE);
+  }
   SDL_SetRenderDrawColor(renderer_, 0, 0, 0, 255);
   SDL_RenderClear(renderer_);
   SDL_FRect dst{0, 0, float(kScreenW), float(kScreenH)};

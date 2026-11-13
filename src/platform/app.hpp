@@ -67,6 +67,7 @@ class App {
   bool fullscreen_ = false;
   bool persist_dirty_ = false;
   bool cursor_visible_ = true;
+  bool small_output_ = false;
   uint8_t mouse_buttons_ = 0;
   std::array<std::array<int, 2>, kPlayers> stick_{};  // last digital stick direction per axis
   uint64_t last_ns_ = 0;
