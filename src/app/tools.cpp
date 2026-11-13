@@ -4,6 +4,7 @@
 #include <cstdlib>
 
 #include "cart/cart.hpp"
+#include "cart/gif.hpp"
 #include "cart/image.hpp"
 #include "platform/crt.hpp"
 #include "runtime/console.hpp"
@@ -83,11 +84,19 @@ bool run_headless(const Headless& opts) {
   con.on_log = [](std::string_view s) { std::printf("%.*s\n", int(s.size()), s.data()); };
   con.run(c, 1);
   std::vector<float> sink(audio::kSamplesPerFrame);
+  cart::GifWriter gif(kScreenW, kScreenH, 2);
   for (int f = 0; f < opts.frames && con.state() == Console::State::kRunning; ++f) {
     for (const auto& p : presses) con.input.set_pad_button(0, p.button, f >= p.from && f < p.to);
     con.tick();
     // Pull audio too, so sound code paths run exactly as they would live.
     con.audio.render(sink.data(), int(sink.size()));
+    // GIF delays are in centiseconds; alternating 3 and 4 averages 30 fps.
+    if (!opts.record.empty() && f >= opts.record_from && (f - opts.record_from) % 2 == 0)
+      gif.add_frame(con.display(), gif.frames() % 3 == 2 ? 4 : 3);
+  }
+  if (!opts.record.empty() && !cart::write_file(opts.record, gif.finish())) {
+    std::fprintf(stderr, "can't write %s\n", opts.record.c_str());
+    return false;
   }
 
   if (!opts.screenshot.empty()) {

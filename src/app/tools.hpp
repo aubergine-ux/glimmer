@@ -10,6 +10,8 @@ struct Headless {
   int frames = 120;
   std::string screenshot;
   bool crt = false;  // screenshot through the CRT filter at 4x
+  std::string record;  // GIF of the run at 2x, 30 fps
+  int record_from = 0;
   std::vector<std::string> presses;  // "button@from-to"
 };
 

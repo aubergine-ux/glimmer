@@ -25,6 +25,8 @@ void usage() {
       "  --headless CART         run without a window, exit 1 on a runtime error\n"
       "      --frames N          frames to run (default 120)\n"
       "      --screenshot OUT    save the final frame as a PNG (4x with --crt)\n"
+      "      --record OUT.gif    record the run as a 2x GIF at 30 fps\n"
+      "      --record-from N     start recording at frame N\n"
       "      --press SPEC        hold buttons, e.g. a@30-60 or right@0-90 (repeatable)\n"
       "  --version               print the version\n");
 }
@@ -61,6 +63,10 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[]) {
       headless.frames = std::atoi(next());
     } else if (a == "--screenshot") {
       headless.screenshot = next();
+    } else if (a == "--record") {
+      headless.record = next();
+    } else if (a == "--record-from") {
+      headless.record_from = std::atoi(next());
     } else if (a == "--press") {
       headless.presses.emplace_back(next());
     } else if (!a.empty() && a[0] != '-') {
