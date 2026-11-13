@@ -17,7 +17,8 @@ glimmer_module(runtime SOURCES runtime/console.cpp DEPS glimmer_script glimmer_c
 
 glimmer_module(crt SOURCES platform/crt.cpp)
 glimmer_module(ui SOURCES ui/ui.cpp ui/icons.cpp DEPS glimmer_gfx glimmer_input)
-glimmer_module(editors SOURCES editors/history.cpp editors/clipboard.cpp editors/api_docs.cpp editors/lua_lexer.cpp DEPS glimmer_ui glimmer_runtime)
+glimmer_module(editors SOURCES editors/history.cpp editors/clipboard.cpp editors/api_docs.cpp editors/lua_lexer.cpp
+  editors/editor.cpp editors/studio.cpp editors/code_editor.cpp DEPS glimmer_ui glimmer_runtime)
 
 if(GLIMMER_BUILD_APP)
   if(EMSCRIPTEN OR GLIMMER_FETCH_SDL)
@@ -38,7 +39,7 @@ if(GLIMMER_BUILD_APP)
     platform/app.cpp platform/boot_cart.cpp)
   target_include_directories(glimmer PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
   target_compile_options(glimmer PRIVATE ${GLIMMER_WARNINGS})
-  target_link_libraries(glimmer PRIVATE glimmer_runtime glimmer_crt SDL3::SDL3)
+  target_link_libraries(glimmer PRIVATE glimmer_editors glimmer_crt SDL3::SDL3)
   set_target_properties(glimmer PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
   if(EMSCRIPTEN)
     set_target_properties(glimmer PROPERTIES SUFFIX ".html")
