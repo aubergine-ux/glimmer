@@ -7,6 +7,10 @@ separately in [SPEC.md](SPEC.md).
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-11-13
+
+The core runtime: everything needed to run carts, without the built-in editors yet.
+
 ### Added
 
 - **Console spec v1:** 256×144 display, 32-color palette, two sprite sheets of
@@ -26,7 +30,13 @@ separately in [SPEC.md](SPEC.md).
   `.png` cartridge pictures with the cart hidden in the pixels.
 - **Desktop app:** pixel-perfect integer scaling, a CRT filter (F9),
   fullscreen (F11), drag-and-drop carts, and persistent `dget`/`dset` saves.
-- **Command-line tools:** `--export` converts between formats, and
-  `--headless` runs carts with scripted input and screenshots.
+- **Command-line tools:** `--export` converts between formats (and captures
+  a label automatically), and `--headless` runs carts with scripted input,
+  screenshots and GIF recording.
+- **Plain `.lua` files:** these run as code-only carts.
+- **Demo carts:** `hello` and `orbit`.
 - **Builds and CI:** WebAssembly build, and CI on Linux, macOS, Windows and
   WebAssembly.
+
+[Unreleased]: https://github.com/aubergine-ux/glimmer/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/aubergine-ux/glimmer/releases/tag/v0.1.0
