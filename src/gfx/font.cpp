@@ -7,8 +7,9 @@ namespace glim::gfx {
 
 namespace {
 
-// One glyph per line: the character, then five rows of three pixels.
-// Codes 128+ are console symbols: arrows, buttons, heart, star, note.
+// One glyph per line: the character, then five rows of three pixels. Glyphs
+// with descenders (g j p q y , ;) give a sixth row, which sits in the gap
+// between lines. Codes 128+ are console symbols: arrows, heart, star, note.
 constexpr std::string_view kFontSource = R"(
   ... ... ... ... ...
 ! .#. .#. .#. ... .#.
@@ -22,7 +23,7 @@ $ .## ##. .#. .## ##.
 ) #.. .#. .#. .#. #..
 * #.# .#. ### .#. #.#
 + ... .#. ### .#. ...
-, ... ... ... .#. #..
+, ... ... ... ... .#. #..
 - ... ... ### ... ...
 . ... ... ... ... .#.
 / ..# ..# .#. #.. #..
@@ -37,7 +38,7 @@ $ .## ##. .#. .## ##.
 8 ### #.# ### #.# ###
 9 ### #.# ### ..# ..#
 : ... .#. ... .#. ...
-; ... .#. ... .#. #..
+; ... .#. ... ... .#. #..
 < ..# .#. #.. .#. ..#
 = ... ### ... ### ...
 > #.. .#. ..# .#. #..
@@ -81,17 +82,17 @@ c ... .## #.. #.. .##
 d ..# .## #.# #.# .##
 e ... .#. ### #.. .##
 f .## #.. ##. #.. #..
-g ... .## #.# .## ##.
+g ... .## #.# #.# .## ##.
 h #.. ##. #.# #.# #.#
 i .#. ... .#. .#. .#.
-j ..# ... ..# #.# .#.
+j ..# ... ..# ..# ..# ##.
 k #.. #.# ##. #.# #.#
 l #.. #.. #.. #.. .##
 m ... ### ### #.# #.#
 n ... ##. #.# #.# #.#
 o ... .#. #.# #.# .#.
-p ... ##. #.# ##. #..
-q ... .## #.# .## ..#
+p ... ##. #.# #.# ##. #..
+q ... .## #.# #.# .## ..#
 r ... .## #.. #.. #..
 s ... .## ##. ..# ##.
 t .#. ### .#. .#. ..#
@@ -99,7 +100,7 @@ u ... #.# #.# #.# .##
 v ... #.# #.# ### .#.
 w ... #.# #.# ### ###
 x ... ... #.# .#. #.#
-y ... #.# #.# .## ##.
+y ... #.# #.# #.# .## ##.
 z ... ### .## #.. ###
 { .## .#. ##. .#. .##
 | .#. .#. .#. .#. .#.
@@ -128,11 +129,12 @@ constexpr uint8_t parse_row(std::string_view s) {
 }
 
 struct FontTable {
-  std::array<std::array<uint8_t, kGlyphH>, 256> rows{};
+  std::array<std::array<uint8_t, kGlyphRows>, 256> rows{};
   std::array<bool, 256> present{};
 
   constexpr void add(int code, std::string_view line) {
-    for (int r = 0; r < kGlyphH; ++r) rows[code][r] = parse_row(line.substr(r * 4, 3));
+    for (int r = 0; r < kGlyphRows && size_t(r * 4 + 3) <= line.size(); ++r)
+      rows[code][r] = parse_row(line.substr(r * 4, 3));
     present[code] = true;
   }
 
@@ -166,8 +168,9 @@ static_assert(kFont.present['A'] && kFont.present['~'] && kFont.present[' ']);
 }  // namespace
 
 uint8_t glyph_row(uint8_t c, int row) {
-  if (row < 0 || row >= kGlyphH) return 0;
+  if (row < 0 || row >= kGlyphRows) return 0;
   if (kFont.present[c]) return kFont.rows[c][row];
+  if (row >= kGlyphH) return 0;
   return (row == 0 || row == kGlyphH - 1) ? 0b111 : 0b101;
 }
 

@@ -357,7 +357,7 @@ int Gfx::print(std::string_view text, int x, int y, int c) {
       py += kCharH;
       continue;
     }
-    for (int row = 0; row < kGlyphH; ++row) {
+    for (int row = 0; row < kGlyphRows; ++row) {
       uint8_t bits = glyph_row(uint8_t(ch), row);
       for (int col = 0; col < kGlyphW; ++col) {
         if (!((bits >> (kGlyphW - 1 - col)) & 1)) continue;

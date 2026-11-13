@@ -5,7 +5,8 @@
 namespace glim::gfx {
 
 inline constexpr int kGlyphW = 3;
-inline constexpr int kGlyphH = 5;
+inline constexpr int kGlyphH = 5;     // cap height
+inline constexpr int kGlyphRows = 6;  // including the descender row
 inline constexpr int kCharW = 4;  // advance including spacing
 inline constexpr int kCharH = 6;  // line height
 

@@ -151,7 +151,7 @@ class Cover {
 
   void text(std::string_view s, int x, int y, int scale, int c) {
     for (char ch : s) {
-      for (int row = 0; row < gfx::kGlyphH; ++row) {
+      for (int row = 0; row < gfx::kGlyphRows; ++row) {
         uint8_t bits = gfx::glyph_row(uint8_t(ch), row);
         for (int col = 0; col < gfx::kGlyphW; ++col)
           if ((bits >> (gfx::kGlyphW - 1 - col)) & 1)

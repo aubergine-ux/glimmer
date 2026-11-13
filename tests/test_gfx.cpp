@@ -202,6 +202,12 @@ TEST_CASE("print uses the built-in font and returns the end position") {
   CHECK(f.px(1, 0) == 0);
   CHECK(f.px(1, 2) == 7);  // H crossbar
   CHECK(gfx::Gfx::text_width("ab\nlonger") == 24);
+
+  f.g.cls(0);
+  f.g.print("g", 0, 0, 7);
+  CHECK(f.px(0, 5) == 7);  // descender hook on the sixth row
+  f.g.print("a", 4, 0, 7);
+  CHECK(f.px(4, 5) == 0);
 }
 
 TEST_CASE("screen palette remaps colors at presentation time") {
