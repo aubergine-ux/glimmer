@@ -212,8 +212,8 @@ LoadResult to_png(const Cart& cart, std::vector<uint8_t>& out) {
 
   Cover cover(cart);
   cover.rect(0, 0, kPngWidth - 1, kPngHeight - 1, 0);
-  cover.rounded(10, 4, 309, 235, 8, 2);
-  cover.rect(10, 4, 290, 10, 3);  // top bevel
+  cover.rounded(10, 4, 309, 235, 8, 3);  // light top edge shows as a bevel
+  cover.rounded(10, 7, 309, 235, 8, 2);
   cover.rect(24, 14, 295, 15, 1);
   cover.text("GLIMMER", 24, 18, 2, 5);
   cover.text("\x86", 286, 18, 2, 17);
