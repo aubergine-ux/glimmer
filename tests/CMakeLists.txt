@@ -6,9 +6,10 @@ add_executable(glimmer_tests
   test_input.cpp
   test_cart.cpp
   test_runtime.cpp
+  test_gif.cpp
 )
 target_compile_options(glimmer_tests PRIVATE ${GLIMMER_WARNINGS})
-target_link_libraries(glimmer_tests PRIVATE glimmer_gfx glimmer_audio glimmer_input glimmer_runtime glimmer_doctest)
+target_link_libraries(glimmer_tests PRIVATE glimmer_gfx glimmer_audio glimmer_input glimmer_runtime glimmer_stb glimmer_doctest)
 if(EMSCRIPTEN)
   # Tests read nothing from disk, so node can run them directly.
   target_link_options(glimmer_tests PRIVATE -sENVIRONMENT=node -sSTACK_SIZE=1048576)
