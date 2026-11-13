@@ -36,49 +36,43 @@ that *is* the game.
 
 ## ✨ Features
 
-- 🛠️ **Every tool built in:** code, sprite, map, sound and music editors run
-  inside the console itself. You can jump between editing and playing with one
-  key, and undo, redo, copy and paste work everywhere, even between carts.
-- ⌨️ **A code editor that helps:** syntax highlighting, autocomplete, live
-  signature hints, an F1 API reference, find and replace, tabs, and crashes
-  that land you on the failing line.
-- 🗺️ **Map and sprite tools:** auto-tiling, layers, multi-tile stamps, onion
-  skinning, animation preview and zoom.
-- 🎵 **A tracker:** compose songs with a piano keyboard, draw sound effects
-  step by step, and design your own wavetables.
-- 🔁 **Hot reload:** pause a game with <kbd>Esc</kbd>, change its code or
-  art, and carry on playing with the changes.
-- 🐞 **A real debugger:** breakpoints, stepping, the call stack and variables,
-  and a CPU/memory overlay on <kbd>F3</kbd>.
-- 💾 **A console shell and cart browser:** a boot animation, folder commands,
-  and a grid of cart covers to pick from.
-- 🎬 **One-key captures:** <kbd>F6</kbd> for a screenshot, <kbd>F8</kbd> to
-  record a GIF.
-- 🎨 **Pixel-perfect graphics:** sprites you can flip, stretch and rotate, a
-  4-layer tile map, shapes, fill patterns, clipping, a camera, palette swaps,
-  and a built-in pixel font.
-- 🎹 **A real synthesizer:** 4 channels, 8 waveforms plus custom wavetables,
-  slides, vibrato and arpeggios, all generated live and sample-accurate.
-- 🌙 **Lua 5.4:** `_init`, `_update` and `_draw`, a friendly API, and an error
-  screen that points at the exact line.
-- ⏱️ **Fair everywhere:** a fixed 1M-cycle frame budget, so a game runs the
-  same on a gaming PC, a laptop and a phone browser.
-- 🖼️ **Carts as pictures:** export any game as a PNG cartridge with the whole
-  game hidden in its pixels. Post it anywhere and anyone can play it.
-- 🕹️ **Up to 4 players:** gamepads, rebindable keys, mouse and keyboard.
-- 📺 **Integer scaling and a CRT filter:** crisp pixels at any window size, or
-  curved glass and scanlines at the press of <kbd>F9</kbd>.
-- 🌐 **Runs in the browser:** the same console, editors included, compiled to
-  WebAssembly.
-- ♿ **Accessible and translated:** rebindable controls, a high-contrast editor
-  theme, adjustable window scale, and the whole console UI in English or
-  Albanian (`lang sq`).
-- 🔗 **Share anywhere:** `share` copies a link that plays your cart, `export
-  game.html` writes a single-file web game with touch controls, and `bundle`
-  builds a standalone app for itch.io.
-- 📱 **Embeddable:** drop `<glimmer-player>` into any web page.
-- 🧪 **Built to last:** a versioned [spec](SPEC.md), so carts keep working
-  forever, and CI on Windows, macOS, Linux and the web.
+<table>
+  <tr>
+    <th width="33%">🛠️ Make</th>
+    <th width="33%">🎮 Play</th>
+    <th width="33%">🔗 Share</th>
+  </tr>
+  <tr valign="top">
+    <td>
+      <b>Code, sprite, map, sound and music editors</b> built into the console<br><br>
+      ⌨️ autocomplete, signature hints and an F1 API reference<br>
+      🗺️ auto-tiling, layers, onion skin, animation preview<br>
+      🎵 a tracker with a piano keyboard and custom wavetables<br>
+      🐞 breakpoints, stepping and a variables panel<br>
+      🔁 hot reload: <kbd>Esc</kbd>, edit, <kbd>Esc</kbd>, keep playing
+    </td>
+    <td>
+      <b>256×144, 32 colors, 4 voices, Lua 5.4</b>, and a fixed CPU budget so every machine plays the same<br><br>
+      🎨 sprites that flip, stretch and rotate; fill patterns; palette swaps<br>
+      🎹 a live synth with slides, vibrato and arpeggios<br>
+      🕹️ up to 4 players on gamepads or rebindable keys<br>
+      📺 pixel-perfect scaling or a CRT filter (<kbd>F9</kbd>)<br>
+      🎬 <kbd>F6</kbd> screenshots, <kbd>F8</kbd> GIFs
+    </td>
+    <td>
+      <b>One file, many ways out</b><br><br>
+      🖼️ PNG cartridges with the game hidden in the pixels<br>
+      🌐 links that play in any browser, touch controls included<br>
+      📄 single-file HTML games<br>
+      📦 standalone apps for Windows, macOS and Linux (itch.io-ready)<br>
+      🧩 a <code>&lt;glimmer-player&gt;</code> web component for your site
+    </td>
+  </tr>
+</table>
+
+♿ **Accessible and translated:** rebindable controls, a high-contrast editor theme, an adjustable window
+scale, and the whole console UI in English or Albanian. Carts made today keep working forever thanks to
+a versioned [spec](SPEC.md), and CI checks every change on Windows, macOS, Linux and the web.
 
 ## 🕹️ Demo carts
 
