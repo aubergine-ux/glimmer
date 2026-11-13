@@ -8,10 +8,10 @@ spec = 1
 -- arrows move, z fires, x sets off a bomb (three per game).
 -- shows: object lists, simple collision, particles, screen shake,
 -- and keeping a high score with dset/dget.
-\
+
 -- game states: "title", "play" or "over"
 state = "title"
-\
+
 function _init()
   hiscore = dget(0)
   bits, shake = {}, 0
@@ -23,7 +23,7 @@ function _init()
   end
   music(0)
 end
-\
+
 function start()
   ship = {x = 124, y = 120, power = 1, cool = 0, hurt = 0}
   lives, bombs, score = 3, 3, 0
@@ -31,7 +31,7 @@ function start()
   wave, wave_timer, shake = 0, 60, 0
   state = "play"
 end
-\
+
 -- big text: print into a spare corner of sprite sheet 1, then stretch it
 -- back out with sspr. each letter gets its own color from the list.
 function big_print(text, x, y, scale, colors)
@@ -45,7 +45,7 @@ function big_print(text, x, y, scale, colors)
   end
   pal()
 end
-\
+
 -- particles: little sparks that fly out and fade
 function burst(x, y, n, colors)
   for i = 1, n do
@@ -53,12 +53,12 @@ function burst(x, y, n, colors)
     add(bits, {x = x, y = y, dx = cos(a) * s, dy = sin(a) * s, life = 15 + rnd(15), colors = colors})
   end
 end
-\
+
 -- two boxes overlap? (all our objects are 8x8, with a small margin)
 function hit(a, b)
   return abs(a.x - b.x) < 6 and abs(a.y - b.y) < 6
 end
-\
+
 -- each wave is a few foes with a pattern; waves get bigger as you go
 function spawn_wave()
   wave = wave + 1
@@ -74,7 +74,7 @@ function spawn_wave()
   end
   wave_timer = 240
 end
-\
+
 function update_play()
   -- move, keeping the ship on screen
   if btn("left") then ship.x = ship.x - 1.8 end
@@ -82,7 +82,7 @@ function update_play()
   if btn("up") then ship.y = ship.y - 1.5 end
   if btn("down") then ship.y = ship.y + 1.5 end
   ship.x, ship.y = mid(4, ship.x, 244), mid(20, ship.y, 132)
-\
+
   -- fire: more power means a wider spread
   ship.cool = ship.cool - 1
   if btn("a") and ship.cool <= 0 then
@@ -93,7 +93,7 @@ function update_play()
     ship.cool = 7
     sfx(0)
   end
-\
+
   -- a bomb clears every foe and enemy shot on screen
   if btnp("b") and bombs > 0 then
     bombs = bombs - 1
@@ -104,16 +104,16 @@ function update_play()
     shake = 20
     sfx(4)
   end
-\
+
   for s in all(shots) do
     s.y = s.y - 4
     s.x = s.x + s.dx
     if s.y < -8 then del(shots, s) end
   end
-\
+
   wave_timer = wave_timer - 1
   if #foes == 0 or wave_timer <= 0 then spawn_wave() end
-\
+
   for f in all(foes) do
     f.t = f.t + 1 / 60
     if f.kind == 4 then
@@ -147,12 +147,12 @@ function update_play()
       end
     end
   end
-\
+
   for s in all(foe_shots) do
     s.x, s.y = s.x + s.dx, s.y + s.dy
     if s.y > 150 or s.y < -10 or s.x < -10 or s.x > 266 then del(foe_shots, s) end
   end
-\
+
   for g in all(gifts) do
     g.y = g.y + 0.7
     if hit(g, ship) then
@@ -163,7 +163,7 @@ function update_play()
       del(gifts, g)
     end
   end
-\
+
   -- getting hit costs a life, then a moment of safety
   ship.hurt = ship.hurt - 1
   if ship.hurt <= 0 then
@@ -190,7 +190,7 @@ function update_play()
     end
   end
 end
-\
+
 function _update()
   for s in all(stars) do
     s.y = (s.y + s.speed) % 144
@@ -208,13 +208,13 @@ function _update()
   end
   shake = max(0, shake - 1)
 end
-\
+
 function _draw()
   cls(0)
   -- shake by nudging the camera a random amount
   camera(rnd(shake) - shake / 2, rnd(shake) - shake / 2)
   for s in all(stars) do pset(s.x, s.y, s.c) end
-\
+
   if state == "title" then
     camera()
     local title = "STARFALL"
@@ -226,7 +226,7 @@ function _draw()
     print("best " .. hiscore, 4, 136, 7)
     return
   end
-\
+
   for b in all(bits) do
     -- sparks cool down through their colors as they fade
     local c = b.colors[min(#b.colors, 1 + flr((30 - b.life) / 8))]
@@ -239,7 +239,7 @@ function _draw()
   if state == "play" and (ship.hurt <= 0 or t() * 10 % 2 < 1) then
     spr(1 + flr(t() * 12) % 2, ship.x - 4, ship.y - 4)
   end
-\
+
   camera()
   print("score " .. score, 4, 2, 31)
   for i = 1, lives do spr(8, 256 - i * 9, 1) end

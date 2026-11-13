@@ -6,21 +6,38 @@ spec = 1
 -- banner.glim: the README header, rendered by Glimmer itself.
 -- tools/readme_assets.py crops the top 256x72 pixels and holds the x
 -- button to get the light-theme variant.
-\
+
 local stars = {}
-\
+
+-- the logo letters, 5x5: wider than the console font, so the M reads as M
+local logo = {
+  G = {".####", "#....", "#..##", "#...#", ".###."},
+  L = {"#....", "#....", "#....", "#....", "#####"},
+  I = {"#####", "..#..", "..#..", "..#..", "#####"},
+  M = {"#...#", "##.##", "#.#.#", "#...#", "#...#"},
+  E = {"#####", "#....", "####.", "#....", "#####"},
+  R = {"####.", "#...#", "####.", "#..#.", "#...#"},
+}
+
+function letter(ch, x, y, scale, c)
+  for row = 1, 5 do
+    for col = 1, 5 do
+      if sub(logo[ch][row], col, col) == "#" then
+        rectfill(x + (col - 1) * scale, y + (row - 1) * scale, x + col * scale - 1, y + row * scale - 1, c)
+      end
+    end
+  end
+end
+
 function _init()
   srand(7)
   for i = 1, 40 do add(stars, {x = rnd(256), y = rnd(72), c = rnd(1)}) end
-  cls(0)
-  print("GLIMMER", 0, 0, 31)
-  for row = 0, 5 do memcpy((16 + row) * 128, 0x1a000 + row * 256, 32) end
 end
-\
+
 function _draw()
   local light = btn("x")
   cls(light and 5 or 1)
-\
+
   for s in all(stars) do
     local c = light and (s.c > 0.5 and 4 or 6) or (s.c > 0.5 and 5 or 7)
     pset(s.x, s.y, c)
@@ -29,7 +46,7 @@ function _draw()
   for p in all({{22, 14}, {236, 50}, {200, 12}, {40, 56}}) do
     print("\134", p[1], p[2], light and 3 or 17)
   end
-\
+
   -- planet with a ring, tucked into the right edge
   local px, py = 222, 30
   oval(px - 22, py - 4, px + 22, py + 4, 16)
@@ -41,18 +58,16 @@ function _draw()
   clip(0, py, 256, 72)
   oval(px - 22, py - 4, px + 22, py + 4, 17)
   clip()
-\
+
   local colors = {29, 30, 17, 21, 28, 25, 4}
   local shadow = light and 3 or 2
+  local word = "GLIMMER"
   for i = 0, 6 do
-    local x = 128 - 56 + i * 16
-    pal(31, shadow)
-    sspr(i * 4, 16, 3, 5, x + 1, 13, 12, 20)
-    pal(31, colors[i + 1])
-    sspr(i * 4, 16, 3, 5, x, 12, 12, 20)
+    local x = 128 - 63 + i * 18
+    letter(sub(word, i + 1, i + 1), x + 1, 13, 3, shadow)
+    letter(sub(word, i + 1, i + 1), x, 12, 3, colors[i + 1])
   end
-  pal()
-\
+
   local tag = "a tiny fantasy console for making and sharing games"
   print(tag, 128 - textwidth(tag) / 2, 48, light and 2 or 6)
 end

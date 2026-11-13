@@ -8,18 +8,18 @@ spec = 1
 -- the arrows and press z. x pauses, q/w change tempo, s changes the sound.
 -- shows: building sound effects at runtime with poke, mouse input,
 -- and saving a pattern in persistent memory.
-\
+
 cols, rows = 16, 8
 cell_w, cell_h = 12, 11
 gx, gy = 34, 22               -- top-left of the grid
-\
+
 -- a pentatonic scale: any notes from it sound good together.
 -- pitch 0 is C2; these run from high to low.
 notes = {38, 36, 33, 31, 28, 26}
 names = {"d5", "c5", "a4", "g4", "e4", "d4", "sn", "kk"}
 row_colors = {29, 30, 12, 16, 17, 21, 25, 4}
 waves = {{6, "sine"}, {1, "pulse"}, {3, "saw"}, {5, "organ"}, {7, "soft"}}
-\
+
 -- sound effect n lives at 0x18400 + n * 68: speed, loop start, loop end,
 -- flags, then 32 steps of two bytes. a step packs
 -- pitch | wave << 6 | volume << 10 | effect << 13.
@@ -31,7 +31,7 @@ function make_sfx(n, speed, steps)
     poke2(a + 4 + i * 2, s[1] | s[2] << 6 | s[3] << 10 | s[4] << 13)
   end
 end
-\
+
 function build_sounds()
   local w = waves[wave_index][1]
   for r = 1, 6 do
@@ -42,7 +42,7 @@ function build_sounds()
   make_sfx(7, 2, {{40, 4, 5, 5}})
   make_sfx(8, 3, {{18, 2, 7, 3}, {10, 2, 5, 5}})
 end
-\
+
 function _init()
   grid = {}
   for c = 1, cols do grid[c] = {} end
@@ -59,7 +59,7 @@ function _init()
   rings = {}
   build_sounds()
 end
-\
+
 -- the pattern fits in 8 persistent slots: two columns (16 bits) each,
 -- small enough to store exactly in dset's 32-bit floats
 function save_pattern()
@@ -75,7 +75,7 @@ function save_pattern()
   end
   dset(8, 1)  -- marks that a pattern was saved
 end
-\
+
 function load_pattern()
   if dget(8) ~= 1 then return false end
   for slot = 0, 7 do
@@ -87,7 +87,7 @@ function load_pattern()
   end
   return true
 end
-\
+
 function toggle(c, r, value)
   if value == nil then value = not grid[c][r] end
   if grid[c][r] ~= value then
@@ -97,12 +97,12 @@ function toggle(c, r, value)
     if value then sfx(r, 3) end
   end
 end
-\
+
 function cell_at(x, y)
   local c, r = flr((x - gx) / cell_w) + 1, flr((y - gy) / cell_h) + 1
   if c >= 1 and c <= cols and r >= 1 and r <= rows then return c, r end
 end
-\
+
 function _update()
   -- mouse: click toggles, dragging paints the same state
   local mx, my, mb = mouse()
@@ -114,7 +114,7 @@ function _update()
   else
     painting = nil
   end
-\
+
   -- keyboard and gamepad
   if btnp("left") then cx = (cx - 2) % cols + 1 end
   if btnp("right") then cx = cx % cols + 1 end
@@ -128,7 +128,7 @@ function _update()
     wave_index = wave_index % #waves + 1
     build_sounds()
   end
-\
+
   -- a step is a sixteenth note: 60 frames per second, 4 steps per beat
   if playing then
     timer = timer + bpm * 4 / 3600
@@ -146,20 +146,20 @@ function _update()
       end
     end
   end
-\
+
   for g in all(rings) do
     g.size = g.size + 0.8
     if g.size > 14 then del(rings, g) end
   end
 end
-\
+
 function _draw()
   cls(1)
   print("LOOPS", 4, 4, 30)
   print(bpm .. " bpm", 40, 4, 17)
   print(waves[wave_index][2], 80, 4, 25)
   print(playing and "playing" or "paused", 216, 4, playing and 21 or 6)
-\
+
   for r = 1, rows do
     print(names[r], gx - 12, gy + (r - 1) * cell_h + 3, row_colors[r])
     for c = 1, cols do
@@ -172,12 +172,12 @@ function _draw()
       if on and c == step then rectfill(x + 3, y + 3, x + cell_w - 4, y + cell_h - 4, 31) end
     end
   end
-\
+
   for g in all(rings) do circ(g.x, g.y, g.size, g.size < 8 and g.c or 2) end
-\
+
   -- cursor for keyboard and gamepad players
   local x, y = gx + (cx - 1) * cell_w, gy + (cy - 1) * cell_h
   rect(x, y, x + cell_w - 1, y + cell_h - 1, t() * 4 % 2 < 1 and 31 or 5)
-\
+
   print("click or z toggles  x pause  q/w tempo  s sound", 4, 136, 7)
 end

@@ -8,16 +8,16 @@ spec = 1
 -- stomp snails from above. shows: tile collision with sprite flags,
 -- a camera that follows the player, and jumps that feel good (coyote
 -- time, a jump buffer and variable height).
-\
+
 level_w = 96 * 8
-\
+
 function _init()
   -- grass tiles (sprites 64-115) are solid: flag 0
   for n = 64, 115 do fset(n, 0, true) end
   state = "title"
   music(0)
 end
-\
+
 function start()
   -- the map is edited at runtime (stars get picked up), so restore it
   reload_map()
@@ -37,7 +37,7 @@ function start()
   end
   state = "play"
 end
-\
+
 -- keep a copy of the starting map so a new game can put the stars back
 function reload_map()
   if not map_copy then
@@ -46,27 +46,27 @@ function reload_map()
   end
   for i = 0, 96 * 18 - 1 do mset(i % 96, flr(i / 96), map_copy[i], 1) end
 end
-\
+
 function solid(x, y)
   return fget(mget(flr(x / 8), flr(y / 8)), 0)
 end
-\
+
 function on_ground(o)
   return solid(o.x + 1, o.y + 8) or solid(o.x + 6, o.y + 8)
 end
-\
+
 function respawn()
   deaths = deaths + 1
   p.x, p.y, p.dx, p.dy = 16, 96, 0, 0
   sfx(5)
 end
-\
+
 function update_player()
   if btn("left") then p.dx = p.dx - 0.35 p.flip = true end
   if btn("right") then p.dx = p.dx + 0.35 p.flip = false end
   p.dx = mid(-1.7, p.dx * 0.82, 1.7)
   p.dy = min(p.dy + 0.25, 3.5)
-\
+
   -- coyote time: a few frames after running off a ledge still count as
   -- standing. the jump buffer remembers a press made just before landing.
   local grounded = on_ground(p)
@@ -78,7 +78,7 @@ function update_player()
   end
   -- let go of jump early for a shorter hop
   if not btn("a") and p.dy < -1.5 then p.dy = -1.5 end
-\
+
   -- move one axis at a time so we can slide along walls
   local nx = p.x + p.dx
   if not (solid(nx + 1, p.y + 1) or solid(nx + 6, p.y + 1) or solid(nx + 1, p.y + 7) or solid(nx + 6, p.y + 7)) then
@@ -96,9 +96,9 @@ function update_player()
   end
   p.y = ny
   if p.y > 150 then respawn() end
-\
+
   if abs(p.dx) > 0.2 and grounded then p.frame = 1 + flr(frames / 6) % 2 end
-\
+
   -- stars (sprite 4) live on map layer 1
   local cx, cy = flr((p.x + 4) / 8), flr((p.y + 4) / 8)
   if mget(cx, cy, 1) == 4 then
@@ -111,7 +111,7 @@ function update_player()
     end
   end
 end
-\
+
 function update_snails()
   for s in all(snails) do
     if s.alive then
@@ -134,7 +134,7 @@ function update_snails()
     end
   end
 end
-\
+
 function _update()
   if state == "play" then
     frames = frames + 1
@@ -144,7 +144,7 @@ function _update()
     start()
   end
 end
-\
+
 function _draw()
   cls(26)
   if state == "title" then
@@ -157,7 +157,7 @@ function _draw()
     if t() % 1 < 0.6 then print("press z", 114, 78, 31) end
     return
   end
-\
+
   -- the camera follows the player but never shows past the level's ends
   local cam = mid(0, p.x - 124, level_w - 256)
   camera(cam, 0)
@@ -171,7 +171,7 @@ function _draw()
   end
   spr(p.frame, p.x, p.y, 1, 1, p.flip)
   camera()
-\
+
   print("\134 " .. stars .. "/" .. stars_total, 4, 4, 1)
   print(flr(frames / 60) .. "s", 236, 4, 1)
   if state == "won" then

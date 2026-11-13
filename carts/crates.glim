@@ -8,7 +8,7 @@ spec = 1
 -- arrows move, z undoes a move, x restarts the level.
 -- shows: levels written as text, an undo stack, smooth movement,
 -- and saving progress with dset/dget.
-\
+
 -- each level is drawn with characters:
 --   # wall   $ crate   . target   @ you   * crate on a target
 levels = {
@@ -54,17 +54,17 @@ levels = {
 }
 -- the fewest moves each level can be solved in
 par = {3, 14, 14, 18, 23, 26}
-\
+
 tile = 16          -- sprites are 8x8, drawn twice as big
 anim_frames = 5    -- frames a move takes to slide
-\
+
 function _init()
   -- slot 0 remembers how far you've got; slots 1-6 your best scores
   unlocked = max(1, dget(0))
   load_level(unlocked)
   music(0)
 end
-\
+
 function load_level(n)
   level = n
   walls, targets, crates = {}, {}, {}
@@ -88,7 +88,7 @@ function load_level(n)
   ox = 128 - width * tile / 2
   oy = 76 - height * tile / 2
 end
-\
+
 -- flood fill from the player: only these cells get a floor tile, so the
 -- outside of the level stays dark
 function reachable()
@@ -106,27 +106,27 @@ function reachable()
   end
   return seen
 end
-\
+
 function crate_at(x, y)
   for c in all(crates) do
     if c.x == x and c.y == y then return c end
   end
 end
-\
+
 function on_target(x, y)
   for t in all(targets) do
     if t.x == x and t.y == y then return true end
   end
   return false
 end
-\
+
 -- remember where everything was, so z can step back
 function snapshot()
   local state = {px = player.x, py = player.y, moves = moves, crates = {}}
   for c in all(crates) do add(state.crates, {x = c.x, y = c.y}) end
   add(history, state)
 end
-\
+
 function try_move(dx, dy)
   local nx, ny = player.x + dx, player.y + dy
   if walls[nx .. "," .. ny] then return end
@@ -149,7 +149,7 @@ function try_move(dx, dy)
   moves = moves + 1
   anim = anim_frames
 end
-\
+
 function undo()
   local state = deli(history)
   if not state then return end
@@ -161,7 +161,7 @@ function undo()
   end
   sfx(4)
 end
-\
+
 function check_solved()
   for c in all(crates) do
     if not on_target(c.x, c.y) then return end
@@ -175,7 +175,7 @@ function check_solved()
     dset(0, unlocked)
   end
 end
-\
+
 function _update()
   if anim > 0 then
     anim = anim - 1
@@ -196,17 +196,17 @@ function _update()
   elseif btnp("r") and level < unlocked then load_level(level + 1)
   end
 end
-\
+
 -- slide from the old cell (fx, fy) to the new one while a move animates
 function screen_pos(o)
   local k = anim / anim_frames
   return ox + lerp(o.x, o.fx, k) * tile, oy + lerp(o.y, o.fy, k) * tile
 end
-\
+
 function big_spr(n, x, y, flip)
   sspr(n % 16 * 8, flr(n / 16) * 8, 8, 8, x, y, tile, tile, flip)
 end
-\
+
 function _draw()
   cls(1)
   for y = 0, height - 1 do
@@ -223,7 +223,7 @@ function _draw()
   end
   local px, py = screen_pos(player)
   big_spr(anim > 0 and 7 or 6, px, py, player.flip)
-\
+
   print("level " .. level .. "/" .. #levels, 4, 3, 5)
   local info = "moves " .. moves .. "  par " .. par[level]
   print(info, 252 - textwidth(info), 3, 6)

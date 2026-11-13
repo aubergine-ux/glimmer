@@ -7,13 +7,13 @@ spec = 1
 -- learn.glim: an interactive tour of glimmer.
 -- left and right turn the page. each lesson shows real code next to
 -- what it does, and some ask you to try something.
-\
+
 -- every lesson has a title, a few lines of text, the code it's about,
 -- a draw function for its demo, and optionally a task to complete.
 lessons = {}
-\
+
 function lesson(l) add(lessons, l) end
-\
+
 lesson {
   title = "hello!",
   text = {"glimmer is a tiny console.", "a game is three functions", "it calls for you:"},
@@ -23,7 +23,7 @@ lesson {
     print("frame " .. flr(t * 60), x + 20, y + 34, 6)
   end,
 }
-\
+
 lesson {
   title = "drawing",
   text = {"the screen is 256 by 144", "pixels. x goes right,", "y goes down."},
@@ -35,7 +35,7 @@ lesson {
     tri(x + 50, y + 44, x + 80, y + 44, x + 65, y + 30, 21)
   end,
 }
-\
+
 lesson {
   title = "colors",
   text = {"there are 32 colors, 0-31.", "pal() swaps one for another.", "try it: hold z."},
@@ -50,7 +50,7 @@ lesson {
     pal()
   end,
 }
-\
+
 lesson {
   title = "text",
   text = {"print draws text anywhere,", "in any color. it returns", "where the text ends."},
@@ -63,7 +63,7 @@ lesson {
     end
   end,
 }
-\
+
 lesson {
   title = "sprites",
   text = {"sprites are 8x8 pictures", "you draw in the sprite", "editor. spr draws them."},
@@ -74,7 +74,7 @@ lesson {
     rspr(1, x + 56, y + 6, t / 2, 2)
   end,
 }
-\
+
 lesson {
   title = "buttons",
   text = {"btn checks a button.", "try it: move glim around", "with the arrow keys."},
@@ -91,7 +91,7 @@ lesson {
     end
   end,
 }
-\
+
 lesson {
   title = "sound",
   text = {"sfx plays a sound effect", "you made in the sound", "editor. try it: press z, x."},
@@ -105,7 +105,7 @@ lesson {
     print("z: blip   x: chirp", x + 8, y + 40, 6)
   end,
 }
-\
+
 lesson {
   title = "your turn",
   text = {"press esc for the editors.", "f1 there lists every", "function. ctrl+r runs."},
@@ -116,7 +116,7 @@ lesson {
     end
   end,
 }
-\
+
 function _init()
   page = 1
   px, py, moved_far = 40, 20, false
@@ -124,7 +124,7 @@ function _init()
   done = {}
   music(0)
 end
-\
+
 function _update()
   if btnp("right") and page < #lessons and page ~= 6 then page = page + 1 sfx(0) end
   if btnp("left") and page > 1 and page ~= 6 then page = page - 1 sfx(0) end
@@ -144,14 +144,14 @@ function _update()
     if btnp("b") then sfx(1) played = played + 1 ring = 12 end
   end
   ring = max(0, ring - 1)
-\
+
   local l = lessons[page]
   if l.task and not done[page] and l.task() then
     done[page] = true
     sfx(3)
   end
 end
-\
+
 function _draw()
   cls(1)
   local l = lessons[page]
@@ -161,19 +161,19 @@ function _draw()
     local c = i == page and 30 or (done[i] and 21 or 2)
     circfill(256 - 8 - (#lessons - i) * 8, 8, 2, c)
   end
-\
+
   for i, line in ipairs(l.text) do print(line, 8, 20 + i * 8, 5) end
-\
+
   -- the code box
   rectfill(6, 62, 132, 66 + #l.code * 8, 0)
   rect(6, 62, 132, 66 + #l.code * 8, 2)
   for i, line in ipairs(l.code) do print(line, 10, 58 + i * 8, 25) end
-\
+
   -- the live demo
   rectfill(144, 20, 250, 120, 0)
   rect(144, 20, 250, 120, 2)
   l.draw(152, 30, t())
-\
+
   if l.task then
     local ok = done[page]
     print(ok and "\134 done!" or "try it!", 8, 112, ok and 21 or 16)

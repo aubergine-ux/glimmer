@@ -9,7 +9,7 @@ spec = 1
 -- colors, arrows bend the field.
 -- shows: drawing without cls, fading with a fill pattern, and shimmering
 -- the whole frame with the screen palette.
-\
+
 themes = {
   {1, 2, 3, 4, 5, 31},          -- dusk
   {9, 10, 11, 12, 13, 18},      -- ember
@@ -17,13 +17,13 @@ themes = {
   {19, 20, 21, 22, 18, 31},     -- moss
   {29, 30, 12, 17, 18, 31},     -- bloom
 }
-\
+
 function _init()
   theme = 5
   new_piece()
   music(0)
 end
-\
+
 function new_piece()
   seed = flr(rnd(10000))
   srand(seed)
@@ -37,11 +37,11 @@ function new_piece()
   bend_x, bend_y, frame = 0, 0, 0
   cls(0)
 end
-\
+
 function spawn()
   return {x = rnd(256), y = rnd(144), life = 80 + rnd(160)}
 end
-\
+
 -- a smooth height map made of a few sine waves
 function height(x, y)
   local h = 0
@@ -50,7 +50,7 @@ function height(x, y)
   end
   return h
 end
-\
+
 -- particles flow along the height map's contour lines (its gradient
 -- turned 90 degrees). a flow like that never piles particles up in one
 -- place, so the picture stays full.
@@ -61,7 +61,7 @@ function flow(x, y)
   if len < 0.00001 then return 0, 0 end
   return dy / len, -dx / len
 end
-\
+
 function _update()
   frame = frame + 1
   if btnp("a") then new_piece() end
@@ -70,7 +70,7 @@ function _update()
   if btn("right") then bend_x = bend_x + 0.003 end
   if btn("up") then bend_y = bend_y - 0.003 end
   if btn("down") then bend_y = bend_y + 0.003 end
-\
+
   for p in all(particles) do
     local vx, vy = flow(p.x, p.y)
     p.px, p.py = p.x, p.y
@@ -83,7 +83,7 @@ function _update()
     end
   end
 end
-\
+
 function _draw()
   -- no cls: instead, darken one pixel in every 4x4 block each frame, so
   -- trails fade slowly. in a fill pattern, set bits draw the alternate
@@ -91,7 +91,7 @@ function _draw()
   fillp(0xffff ~ 1 << flr(rnd(16)), -1)
   rectfill(0, 0, 255, 143, 0)
   fillp()
-\
+
   local ramp = themes[theme]
   for p in all(particles) do
     if p.px then
@@ -100,14 +100,14 @@ function _draw()
       line(p.px, p.py, p.x, p.y, ramp[k])
     end
   end
-\
+
   -- shimmer: once in a while swap neighbouring ramp colors for the whole
   -- frame. the screen palette changes what is shown, not what is drawn.
   pal()
   if frame % 90 < 6 then
     for i = 1, #ramp - 1 do pal(ramp[i], ramp[i + 1], true) end
   end
-\
+
   if frame < 180 then
     print("bloom  #" .. seed, 4, 4, 6)
     print("z new  x colors  arrows bend", 4, 136, 7)
