@@ -1,21 +1,41 @@
 # Glimmer Editors
 
 Glimmer's editors run inside the console at its own 256×144 resolution and
-work with the mouse and keyboard. Start them by running `glimmer` with no
-arguments, or press <kbd>Esc</kbd> while a cart is playing.
+work with the mouse and keyboard. Running `glimmer` with no arguments boots
+into the [shell](#shell). Pressing <kbd>Esc</kbd> while a cart is playing
+pauses it and opens the editors.
 
 ## Everywhere
 
 | Action | Keys |
 |---|---|
-| Run the cart | <kbd>Ctrl</kbd>+<kbd>R</kbd> or the ▶ button |
-| Back to the editors | <kbd>Esc</kbd> |
+| Run the cart (from the start) | <kbd>Ctrl</kbd>+<kbd>R</kbd> or the ▶ button |
+| Pause the game and edit | <kbd>Esc</kbd> |
+| Resume with your changes | <kbd>Esc</kbd> again, or <kbd>Ctrl</kbd>+<kbd>Enter</kbd> |
 | Save | <kbd>Ctrl</kbd>+<kbd>S</kbd> |
 | Switch editor | <kbd>Alt</kbd>+<kbd>1</kbd>–<kbd>5</kbd>, <kbd>Ctrl</kbd>+<kbd>Tab</kbd> |
 | Undo / redo | <kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Y</kbd> (or <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd>) |
 | Copy, cut, paste | <kbd>Ctrl</kbd>+<kbd>C</kbd>, <kbd>X</kbd>, <kbd>V</kbd> |
 | Capture the cart label while playing | <kbd>F7</kbd> |
+| Screenshot (4×) | <kbd>F6</kbd> |
+| Start / stop a GIF recording | <kbd>F8</kbd> |
+| CPU and memory overlay | <kbd>F3</kbd> |
 | Quit | <kbd>Ctrl</kbd>+<kbd>Q</kbd> |
+
+Screenshots and recordings are saved to `Pictures/glimmer`. Recordings run
+at 30 fps and stop by themselves after 30 seconds.
+
+### Hot reload
+
+Press <kbd>Esc</kbd> while a game runs, change anything (code, sprites,
+sounds, the map), and press <kbd>Esc</kbd> again. The game carries on with
+your changes, without restarting.
+
+The cart's code is run again in the live game, which redefines your
+functions. `_init` isn't called again, so state you set up there survives.
+Map edits are applied only if you changed the map, so tiles the game changed
+with `mset` stay as they are. If the new code doesn't compile, the game stays
+paused and the editor shows the error.
 
 Each editor has its own undo history.
 
@@ -26,6 +46,31 @@ keeping what you copied.
 
 When a cart crashes, any key takes you back to the code editor with the
 failing line highlighted.
+
+## Shell
+
+The first tab is the console's command line. It boots with a short
+animation; any key skips it.
+
+| Command | What it does |
+|---|---|
+| `ls`, `cd <folder>` | List and change folders (`cd ..` goes up) |
+| `load <cart>` | Open a cart in the editors; the extension is optional |
+| `run` | Play the current cart |
+| `save [name]` | Save; a `.png` name saves a cartridge picture |
+| `export <file>` | Write a `.png` or `.glim` copy (PNGs get a label captured automatically) |
+| `new` | Start a fresh cart |
+| `browse` | Pick a cart from a grid of covers |
+| `info` | Code size, packed size against the PNG limit, sprites used |
+| `title <text>`, `author <text>` | Set the cart's metadata |
+| `edit`, `cls`, `reboot`, `help` | |
+
+<kbd>Tab</kbd> completes file names, and <kbd>↑</kbd> and <kbd>↓</kbd> step
+through earlier commands.
+
+In the **cart browser**, use the arrow keys to choose, <kbd>Enter</kbd> to
+play and <kbd>E</kbd> to edit. Carts without a saved label get a cover from a
+short run.
 
 ## Code
 
@@ -39,6 +84,26 @@ failing line highlighted.
 | Duplicate line | <kbd>Ctrl</kbd>+<kbd>D</kbd> |
 | Move line | <kbd>Alt</kbd>+<kbd>↑</kbd> / <kbd>↓</kbd> |
 | Next / previous tab | <kbd>Ctrl</kbd>+<kbd>PgDn</kbd> / <kbd>PgUp</kbd> |
+
+### Debugger
+
+Click the left edge of the gutter, or press <kbd>Ctrl</kbd>+<kbd>B</kbd>, to
+set a breakpoint on a line. When the running game reaches it, the game stops
+and the debugger opens beside the code. The panel shows the call stack with
+each function's locals and upvalues (prefixed `^`), followed by the cart's
+own globals. Click a table to expand it.
+
+| Action | Keys |
+|---|---|
+| Continue | <kbd>F5</kbd> |
+| Step over | <kbd>F10</kbd> |
+| Step into | <kbd>F11</kbd> |
+| Step out | <kbd>Shift</kbd>+<kbd>F11</kbd> |
+
+Breakpoints only stop the main game code, not code running inside a cart's
+own coroutines.
+
+### Tabs
 
 **Tabs** split long code into sections. Click **+** to add a tab, and
 double-click a tab to rename it. In the cart file, tabs are stored as
