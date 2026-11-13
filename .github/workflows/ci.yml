@@ -61,7 +61,7 @@ jobs:
 
       - uses: mymindstorm/setup-emsdk@v14
         with:
-          version: 4.0.19
+          version: 7.0.0
 
       - uses: actions/setup-node@v4
         with:
