@@ -37,7 +37,7 @@ function _draw()
   end
   pal()
 
-  local msg = "drop a .glim or .png cart here"
+  local msg = "drop a .glim, .png or .lua cart here"
   print(msg, 128 - textwidth(msg) / 2, 92, 6)
   if t() % 1 < 0.6 then
     local hint = "or run: glimmer mygame.glim"

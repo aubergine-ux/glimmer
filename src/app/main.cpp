@@ -19,7 +19,7 @@ void usage() {
   std::puts(
       "usage: glimmer [options] [cart]\n"
       "\n"
-      "  cart                    a .glim or .png cart to run\n"
+      "  cart                    a .glim, .png or .lua cart to run\n"
       "  --fullscreen            start fullscreen (toggle with F11 or Alt+Enter)\n"
       "  --crt                   start with the CRT filter (toggle with F9)\n"
       "  --scale N               initial window scale (default 4)\n"
