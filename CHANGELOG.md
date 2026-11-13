@@ -7,6 +7,11 @@ separately in [SPEC.md](SPEC.md).
 
 ## [Unreleased]
 
+### Fixed
+
+- **Web clipboard:** copy and paste in the web console now go through the system
+  clipboard, so code and art can move between the browser and other apps.
+
 ## [1.0.0] - 2026-11-13
 
 Everything planned for Glimmer: six demo carts, translations and accessibility.
