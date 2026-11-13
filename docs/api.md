@@ -99,7 +99,7 @@ are symbols: ◀ ▶ ▲ ▼ ■ ♥ ✦ ♪ ✚ ▢.
 | `reset()` | Reset camera, clip, palettes, pen, fill pattern and cursor |
 
 ```lua
-fillp(0b1010010110100101, 2) -- checkerboard of the pen color and color 2
+fillp(0xa5a5, 2) -- checkerboard: bits 1010 0101 1010 0101
 rectfill(10, 10, 60, 40, 3)
 fillp()
 ```
