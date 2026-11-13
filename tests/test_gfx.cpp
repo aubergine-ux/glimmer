@@ -1,5 +1,6 @@
 #include <doctest.h>
 
+#include "gfx/font.hpp"
 #include "gfx/gfx.hpp"
 
 using namespace glim;
@@ -218,4 +219,16 @@ TEST_CASE("screen palette remaps colors at presentation time") {
   f.g.to_rgb(out);
   CHECK(out[0] == 0xFFFFFF);
   CHECK(f.px(0, 0) == 1);
+}
+
+TEST_CASE("utf-8 text maps albanian letters and keeps raw glyph bytes") {
+  auto g = gfx::glyphs("ë\xc3\xa7" "a" "\x86");
+  REQUIRE(g.size() == 4);
+  CHECK(g[0] == 138);
+  CHECK(g[1] == 139);
+  CHECK(g[2] == 'a');
+  CHECK(g[3] == 134);  // not valid utf-8: printed as the raw glyph code
+  CHECK(gfx::glyphs("日").size() == 1);
+  CHECK(gfx::glyphs("日")[0] == '?');
+  CHECK(gfx::Gfx::text_width("çë") == 8);
 }

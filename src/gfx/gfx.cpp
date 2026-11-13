@@ -337,7 +337,7 @@ void Gfx::map(int cx, int cy, int sx, int sy, int w, int h, uint8_t layers, uint
 
 int Gfx::text_width(std::string_view text) {
   int w = 0, best = 0;
-  for (char ch : text) {
+  for (uint8_t ch : glyphs(text)) {
     if (ch == '\n') {
       best = std::max(best, w);
       w = 0;
@@ -351,7 +351,7 @@ int Gfx::text_width(std::string_view text) {
 int Gfx::print(std::string_view text, int x, int y, int c) {
   auto cr = clip_rect();
   int px = x - cam_x(), py = y - cam_y(), start = px;
-  for (char ch : text) {
+  for (uint8_t ch : glyphs(text)) {
     if (ch == '\n') {
       px = start;
       py += kCharH;

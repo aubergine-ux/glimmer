@@ -120,6 +120,10 @@ constexpr std::string_view kSymbolSource = R"(
 135 .## .#. .#. ##. ##.
 136 ... .#. ### .#. ...
 137 ### #.# #.# #.# ###
+138 #.# .#. ### #.. .##
+139 ... .## #.. #.. .## .#.
+140 #.# ### ##. #.. ###
+141 .## #.. #.. #.. .## .#.
 )";
 
 constexpr uint8_t parse_row(std::string_view s) {
@@ -166,6 +170,32 @@ constexpr FontTable kFont{};
 static_assert(kFont.present['A'] && kFont.present['~'] && kFont.present[' ']);
 
 }  // namespace
+
+std::vector<uint8_t> glyphs(std::string_view text) {
+  std::vector<uint8_t> out;
+  out.reserve(text.size());
+  for (size_t i = 0; i < text.size(); ++i) {
+    uint8_t b = uint8_t(text[i]);
+    int len = (b & 0xE0) == 0xC0 ? 2 : (b & 0xF0) == 0xE0 ? 3 : (b & 0xF8) == 0xF0 ? 4 : 1;
+    bool valid = len > 1 && i + size_t(len) <= text.size();
+    for (int k = 1; valid && k < len; ++k) valid = (uint8_t(text[i + size_t(k)]) & 0xC0) == 0x80;
+    if (!valid) {
+      out.push_back(b);
+      continue;
+    }
+    uint32_t cp = b & (0xFF >> (len + 1));
+    for (int k = 1; k < len; ++k) cp = (cp << 6) | (uint8_t(text[i + size_t(k)]) & 0x3F);
+    i += size_t(len - 1);
+    switch (cp) {
+      case 0xEB: out.push_back(138); break;  // ë
+      case 0xE7: out.push_back(139); break;  // ç
+      case 0xCB: out.push_back(140); break;  // Ë
+      case 0xC7: out.push_back(141); break;  // Ç
+      default: out.push_back(cp < 128 ? uint8_t(cp) : uint8_t('?')); break;
+    }
+  }
+  return out;
+}
 
 uint8_t glyph_row(uint8_t c, int row) {
   if (row < 0 || row >= kGlyphRows) return 0;
