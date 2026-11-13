@@ -270,6 +270,11 @@ bool run_studio_script(const std::string& script_path, const std::string& cart_p
         step(2);
       }
     } else if (cmd == "shot") {
+      // "@name" saves next to the recording as <recording>-name.png.
+      if (!arg.empty() && arg[0] == '@') {
+        std::string base = gif_path.empty() ? std::string("shot") : gif_path.substr(0, gif_path.rfind('.'));
+        arg = base + "-" + arg.substr(1) + ".png";
+      }
       cart::Image img(kScreenW, kScreenH);
       const uint32_t* px = studio.display();
       for (int i = 0; i < kScreenW * kScreenH; ++i) {
