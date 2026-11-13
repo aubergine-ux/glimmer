@@ -20,7 +20,10 @@ glimmer_module(script SOURCES script/vm.cpp script/api.cpp script/prelude.cpp
 glimmer_module(runtime SOURCES runtime/console.cpp DEPS glimmer_script glimmer_cart)
 
 glimmer_module(crt SOURCES platform/crt.cpp)
-glimmer_module(ui SOURCES ui/ui.cpp ui/icons.cpp DEPS glimmer_gfx glimmer_input)
+include(${PROJECT_SOURCE_DIR}/cmake/embed_langs.cmake)
+glimmer_embed_langs(${CMAKE_CURRENT_BINARY_DIR}/generated/lang_files.hpp)
+glimmer_module(ui SOURCES ui/ui.cpp ui/icons.cpp ui/i18n.cpp DEPS glimmer_gfx glimmer_input)
+target_include_directories(glimmer_ui PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/generated)
 glimmer_module(editors SOURCES editors/history.cpp editors/clipboard.cpp editors/api_docs.cpp editors/lua_lexer.cpp
   editors/editor.cpp editors/studio.cpp editors/code_editor.cpp editors/sprite_editor.cpp editors/map_editor.cpp editors/sfx_editor.cpp editors/music_editor.cpp editors/shell.cpp DEPS glimmer_ui glimmer_runtime)
 
