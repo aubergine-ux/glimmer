@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Glimmer: a tiny fantasy console</title>
+  <meta name="description" content="Make tiny games in Lua. Draw them, score them, and share them as a picture. An open-source fantasy console that runs in your browser.">
+  <meta property="og:title" content="Glimmer: a tiny fantasy console">
+  <meta property="og:description" content="Make tiny games in Lua. Draw them, score them, and share them as a picture.">
+  <meta property="og:image" content="assets/banner-dark.png">
+  <link rel="icon" href="assets/favicon.png">
+  <script>
+    // Old links put the cart in the query string of the site root.
+    if (/[?&]cart=/.test(location.search)) location.replace('play/' + location.search + location.hash);
+  </script>
+  <link rel="stylesheet" href="site.css">
+</head>
+<body>
+  <header class="hero">
+    <picture>
+      <source media="(prefers-color-scheme: light)" srcset="assets/banner-light.png">
+      <img class="banner" src="assets/banner-dark.png" alt="Glimmer" width="1024" height="288">
+    </picture>
+    <p class="tagline">Make tiny games in Lua. Draw them, score them, and share them as a picture.</p>
+    <div class="actions">
+      <a class="button primary" href="console/">▶ Open the console</a>
+      <a class="button" href="https://github.com/aubergine-ux/glimmer/releases/latest">Download</a>
+      <a class="button" href="docs/api.html">API docs</a>
+    </div>
+    <img class="shot" src="assets/hero.gif" alt="Editing a cart in Glimmer's code, sprite, map and music editors, then playing it" width="512" height="288">
+  </header>
+
+  <main>
+    <section>
+      <h2>Everything in one tiny box</h2>
+      <p class="lead">Glimmer is a pretend retro computer: 256×144 pixels, 32 colors, four sound channels and a
+        fixed CPU budget. The tools for making a game come built in, and every machine runs a cart exactly the same way.</p>
+      <div class="grid features">
+        <article><h3>🛠️ Built-in editors</h3><p>Code, sprites, maps, sound effects and a music tracker, all inside the console.</p></article>
+        <article><h3>🌙 Lua 5.4</h3><p>Autocomplete, signature hints, a debugger, and hot reload while the game runs.</p></article>
+        <article><h3>🎵 A real synth</h3><p>Eight waveforms, custom wavetables, slides, vibrato and arpeggios, made live.</p></article>
+        <article><h3>🖼️ Carts are pictures</h3><p>Export a game as a PNG with the whole cart hidden in its pixels.</p></article>
+        <article><h3>🌐 Share anywhere</h3><p>Links that play in any browser, single-file HTML games, and standalone apps for itch.io.</p></article>
+        <article><h3>📱 Touch ready</h3><p>The web player has on-screen controls, so your games work on phones too.</p></article>
+      </div>
+    </section>
+
+    <section id="gallery">
+      <h2>Play the demos</h2>
+      <div class="grid carts">
+        <a class="cart" href="play/?cart=sprout"><img src="assets/carts/sprout.gif" alt="sprout" loading="lazy"><b>sprout</b><span>a tiny platformer</span></a>
+        <a class="cart" href="play/?cart=orbit"><img src="assets/carts/orbit.gif" alt="orbit" loading="lazy"><b>orbit</b><span>rotation, dithering and the synth</span></a>
+        <a class="cart" href="play/?cart=hello"><img src="assets/carts/hello.gif" alt="hello" loading="lazy"><b>hello</b><span>the smallest useful cart</span></a>
+      </div>
+    </section>
+
+    <section>
+      <h2>Hello, world</h2>
+      <pre><code><span class="k">function</span> <span class="c">_update</span>()
+  <span class="k">if</span> <span class="a">btn</span>(<span class="s">"left"</span>)  <span class="k">then</span> x = x - <span class="n">2</span> <span class="k">end</span>
+  <span class="k">if</span> <span class="a">btn</span>(<span class="s">"right"</span>) <span class="k">then</span> x = x + <span class="n">2</span> <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="k">function</span> <span class="c">_draw</span>()
+  <span class="a">cls</span>(<span class="n">1</span>)
+  <span class="a">circfill</span>(x, <span class="n">72</span>, <span class="n">8</span>, <span class="n">17</span>)
+<span class="k">end</span>
+
+x = <span class="n">128</span></code></pre>
+      <p>Open the <a href="console/">console</a>, type <code>new</code>, press <kbd>Alt</kbd>+<kbd>2</kbd> for the code editor, and
+        <kbd>Ctrl</kbd>+<kbd>R</kbd> to run.</p>
+    </section>
+
+    <section>
+      <h2>Put a game on your page</h2>
+      <pre><code>&lt;script src="https://armd.one/glimmer/embed.js"&gt;&lt;/script&gt;
+&lt;glimmer-player cart="sprout"&gt;&lt;/glimmer-player&gt;</code></pre>
+      <glimmer-player cart="sprout" width="640"></glimmer-player>
+      <p>Point <code>src</code> at any <code>.glim</code> or <code>.png</code> cart instead, or paste the
+        <code>data</code> from the shell's <code>share</code> command.</p>
+    </section>
+
+    <section>
+      <h2>Learn more</h2>
+      <div class="grid docs">
+        <a href="docs/api.html"><b>API reference</b><span>every function, with examples</span></a>
+        <a href="docs/editors.html"><b>Editor guide</b><span>every tool and shortcut</span></a>
+        <a href="docs/spec.html"><b>Console spec</b><span>the virtual hardware, versioned</span></a>
+        <a href="docs/architecture.html"><b>Architecture</b><span>how the C++ fits together</span></a>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <a href="https://github.com/aubergine-ux/glimmer">GitHub</a> ·
+    <a href="https://github.com/aubergine-ux/glimmer/blob/main/LICENSE">MIT license</a> ·
+    made by <a href="https://github.com/aubergine-ux">aubergine-ux</a>
+  </footer>
+  <script src="embed.js"></script>
+</body>
+</html>

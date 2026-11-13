@@ -29,11 +29,14 @@ jobs:
           emcmake cmake -S . -B build-web -DCMAKE_BUILD_TYPE=Release -DGLIMMER_BUILD_TESTS=OFF
           cmake --build build-web --parallel
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
       - name: Assemble site
         run: |
-          mkdir -p site
-          cp build-web/glimmer.html site/index.html
-          cp build-web/glimmer.js build-web/glimmer.wasm build-web/glimmer.data site/
+          pip install markdown pillow
+          python tools/build_site.py build-web site
 
       - uses: actions/upload-pages-artifact@v3
         with:

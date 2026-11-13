@@ -88,6 +88,8 @@
       window.Module = {
         canvas: canvas,
         arguments: args,
+        // The hosted player shares the console's runtime files.
+        locateFile: function (path, prefix) { return (window.GLIMMER_RUNTIME_BASE || prefix) + path; },
         setStatus: function (s) { statusEl.textContent = s ? s.toLowerCase() : ''; },
         onRuntimeInitialized: function () { statusEl.textContent = ''; canvas.focus(); },
         preRun: [function () {

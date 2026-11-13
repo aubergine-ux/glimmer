@@ -8,7 +8,24 @@ permissions:
   contents: write
 
 jobs:
+  web-runtime:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 7.0.0
+      - name: Build the single-file web runtime
+        run: |
+          emcmake cmake -S . -B build-web -DCMAKE_BUILD_TYPE=Release -DGLIMMER_BUILD_TESTS=OFF
+          cmake --build build-web --target glimmer_player --parallel
+      - uses: actions/upload-artifact@v4
+        with:
+          name: web-runtime
+          path: build-web/glimmer_player.js
+
   build:
+    needs: web-runtime
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
     strategy:
@@ -39,16 +56,24 @@ jobs:
           cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DGLIMMER_FETCH_SDL=ON -DGLIMMER_BUILD_TESTS=OFF $extra
           cmake --build build --config Release --parallel
 
+      - uses: actions/download-artifact@v4
+        with:
+          name: web-runtime
+          path: web-runtime
+
       - name: Package
         shell: bash
         run: |
           name="glimmer-${GITHUB_REF_NAME#v}-${{ matrix.name }}"
           mkdir -p "dist/$name"
           cp -r carts LICENSE README.md "dist/$name/"
+          # The web runtime sits beside the program so HTML exports work offline.
           case "$RUNNER_OS" in
-            Linux)   cp build/glimmer "dist/$name/" ;;
-            macOS)   cp -r build/glimmer.app "dist/$name/Glimmer.app" ;;
-            Windows) cp build/Release/glimmer.exe "dist/$name/" ;;
+            Linux)   cp build/glimmer web-runtime/glimmer_player.js "dist/$name/" ;;
+            macOS)   cp -r build/glimmer.app "dist/$name/Glimmer.app"
+                     cp web-runtime/glimmer_player.js "dist/$name/Glimmer.app/Contents/Resources/"
+                     cp -r carts "dist/$name/Glimmer.app/Contents/Resources/" ;;
+            Windows) cp build/Release/glimmer.exe web-runtime/glimmer_player.js "dist/$name/" ;;
           esac
           cd dist
           if [ "$RUNNER_OS" = Windows ]; then

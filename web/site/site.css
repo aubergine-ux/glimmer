@@ -1,0 +1,66 @@
+:root {
+  --bg: #0b0a12; --panel: #1f1a33; --raised: #3a2f5b; --text: #f2e9ff; --dim: #8a8fa8;
+  --accent: #ff6fb5; --link: #8fdcff; --code: #ffd166; --kw: #ff6fb5; --api: #3fa7f0; --num: #f39c34;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root { --bg: #f2e9ff; --panel: #ffffff; --raised: #e4d8f7; --text: #1f1a33; --dim: #4a4e69;
+    --accent: #b03f86; --link: #1f6fb2; --code: #7a3e1d; --kw: #b03f86; --api: #1f6fb2; --num: #c06a2b;
+    color-scheme: light; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text);
+  font: 16px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif; }
+a { color: var(--link); }
+img { max-width: 100%; height: auto; }
+code, pre, kbd { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+code { font-size: .92em; background: var(--raised); padding: .1em .35em; border-radius: 4px; }
+kbd { font-size: .85em; background: var(--raised); border: 1px solid var(--dim); border-bottom-width: 2px;
+  padding: 0 .4em; border-radius: 4px; }
+pre { background: var(--panel); border: 1px solid var(--raised); border-radius: 8px; padding: 14px 16px;
+  overflow-x: auto; line-height: 1.5; }
+pre code { background: none; padding: 0; }
+pre .k { color: var(--kw); } pre .a { color: var(--api); } pre .s { color: var(--code); }
+pre .n { color: var(--num); } pre .c { color: #36c2a6; }
+
+.hero { text-align: center; padding: 40px 16px 24px; }
+.banner { width: min(820px, 100%); image-rendering: pixelated; }
+.tagline { font-size: 1.2em; margin: 8px auto 20px; max-width: 640px; }
+.actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 28px; }
+.button { display: inline-block; padding: 10px 18px; border-radius: 8px; text-decoration: none;
+  background: var(--raised); color: var(--text); font-weight: 600; }
+.button.primary { background: var(--accent); color: #fff; }
+.button:hover { filter: brightness(1.1); }
+.shot { width: min(640px, 100%); image-rendering: pixelated; border-radius: 8px; box-shadow: 0 10px 40px #0006; }
+
+main { max-width: 960px; margin: 0 auto; padding: 0 16px 40px; }
+section { margin: 48px 0; }
+h2 { font-size: 1.6em; margin-bottom: 12px; }
+.lead { color: var(--dim); max-width: 720px; }
+.grid { display: grid; gap: 14px; }
+.features { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+.features article { background: var(--panel); border: 1px solid var(--raised); border-radius: 10px; padding: 14px 16px; }
+.features h3 { margin: 0 0 4px; font-size: 1.05em; }
+.features p { margin: 0; color: var(--dim); }
+.carts { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+.cart, .docs a { display: flex; flex-direction: column; text-decoration: none; color: var(--text);
+  background: var(--panel); border: 1px solid var(--raised); border-radius: 10px; overflow: hidden; }
+.cart img { image-rendering: pixelated; aspect-ratio: 16 / 9; width: 100%; }
+.cart b, .docs b { padding: 8px 12px 0; }
+.cart span, .docs span { padding: 0 12px 10px; color: var(--dim); font-size: .92em; }
+.cart:hover, .docs a:hover { border-color: var(--accent); }
+.docs { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+.docs b { padding-top: 12px; }
+glimmer-player { margin: 16px 0; }
+footer { text-align: center; color: var(--dim); padding: 24px 16px 40px; border-top: 1px solid var(--raised); }
+
+/* Rendered documentation pages */
+.doc { max-width: 900px; margin: 0 auto; padding: 24px 16px 60px; }
+.doc nav { display: flex; gap: 16px; flex-wrap: wrap; align-items: center; padding-bottom: 12px;
+  border-bottom: 1px solid var(--raised); margin-bottom: 24px; }
+.doc nav .home { font-weight: 700; color: var(--accent); text-decoration: none; margin-right: auto; }
+.doc table { border-collapse: collapse; width: 100%; margin: 12px 0; display: block; overflow-x: auto; }
+.doc th, .doc td { border: 1px solid var(--raised); padding: 6px 10px; text-align: left; vertical-align: top; }
+.doc th { background: var(--panel); }
+.doc h1 { font-size: 2em; }
+.doc h2 { margin-top: 40px; border-bottom: 1px solid var(--raised); padding-bottom: 4px; }
