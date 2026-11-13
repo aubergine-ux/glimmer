@@ -1,12 +1,10 @@
 #include "platform/app.hpp"
 
 #include <algorithm>
-#include <chrono>
 #include <cmath>
 #include <filesystem>
 
 #include "cart/image.hpp"
-#include "platform/boot_cart.hpp"
 
 namespace glim::platform {
 
@@ -33,15 +31,42 @@ int button_for(SDL_GamepadButton b) {
   }
 }
 
-uint64_t time_seed() { return uint64_t(std::chrono::steady_clock::now().time_since_epoch().count()); }
-
 std::string read_text(const std::string& path) {
   std::vector<uint8_t> bytes;
   if (!cart::read_file(path, bytes)) return {};
   return std::string(bytes.begin(), bytes.end());
 }
 
+constexpr const char* kStarterCode = R"lua(-- a new glimmer cart
+-- ctrl+r runs it, esc comes back here.
+
+function _init()
+  t0 = 0
+end
+
+function _update()
+  t0 = t0 + 1
+end
+
+function _draw()
+  cls(1)
+  local msg = "hello!"
+  print(msg, 128 - textwidth(msg) / 2, 68 + sin(t0 / 60) * 4, 17)
+end
+)lua";
+
 }  // namespace
+
+App::App()
+    : studio_(console_, {[] {
+                           std::string text;
+                           if (char* c = SDL_GetClipboardText()) {
+                             text = c;
+                             SDL_free(c);
+                           }
+                           return text;
+                         },
+                         [](const std::string& text) { SDL_SetClipboardText(text.c_str()); }}) {}
 
 App::~App() {
   save_persist();
@@ -95,8 +120,8 @@ bool App::init(const Options& opts) {
   console_.on_persist = [this] { persist_dirty_ = true; };
 
   if (opts.fullscreen) toggle_fullscreen();
-  if (opts.cart_path.empty()) run_boot_cart();
-  else load_cart(opts.cart_path);
+  if (opts.cart_path.empty()) new_cart();
+  else load_cart(opts.cart_path, true);
   last_ns_ = SDL_GetTicksNS();
   return true;
 }
@@ -120,38 +145,40 @@ void App::save_settings() {
   cart::write_file(pref_path("settings.cfg"), {reinterpret_cast<const uint8_t*>(text.data()), text.size()});
 }
 
-void App::run_boot_cart() {
-  cart_path_.clear();
-  cart::Cart boot;
-  boot.code = kBootCartCode;
-  boot.set_meta("title", "glimmer");
-  console_.run(boot, time_seed());
+void App::new_cart() {
+  cart::Cart c;
+  c.code = kStarterCode;
+  studio_.open(c, "");
+  SDL_SetWindowTitle(window_, "Glimmer");
 }
 
-void App::load_cart(const std::string& path) {
+void App::load_cart(const std::string& path, bool play) {
   save_persist();
   cart::Cart c;
   auto r = cart::load_file(path, c);
   if (!r.ok) {
     SDL_Log("can't load %s: %s", path.c_str(), r.error.c_str());
+    studio_.message(r.error, true);
     return;
   }
-  cart_path_ = path;
   std::string stem = std::filesystem::path(path).stem().string();
   SDL_SetWindowTitle(window_, ("Glimmer - " + c.get_meta("title", stem)).c_str());
 
   std::vector<uint8_t> save;
   std::vector<uint8_t> zero(addr::kPersistSize, 0);
   console_.set_persist(cart::read_file(pref_path("saves/" + stem + ".sav"), save) ? save : zero);
-  console_.run(c, time_seed());
+  // A .lua file isn't a cart file; saving it writes a .glim beside it instead.
+  std::string cart_path = path.ends_with(".lua") ? path.substr(0, path.size() - 4) + ".glim" : path;
+  studio_.open(c, cart_path);
+  if (play) studio_.play();
 }
 
 void App::save_persist() {
-  if (!persist_dirty_ || cart_path_.empty() || prefs_.empty()) return;
+  if (!persist_dirty_ || studio_.path().empty() || prefs_.empty()) return;
   persist_dirty_ = false;
   std::error_code ec;
   std::filesystem::create_directories(pref_path("saves"), ec);
-  std::string stem = std::filesystem::path(cart_path_).stem().string();
+  std::string stem = std::filesystem::path(studio_.path()).stem().string();
   cart::write_file(pref_path("saves/" + stem + ".sav"), console_.persist());
 }
 
@@ -206,9 +233,10 @@ void App::on_key(const SDL_KeyboardEvent& k, bool down) {
       save_settings();
       return;
     }
-    if (ctrl && k.scancode == SDL_SCANCODE_R) {
-      if (cart_path_.empty()) run_boot_cart();
-      else load_cart(cart_path_);
+    if (ctrl && k.scancode == SDL_SCANCODE_Q) {
+      SDL_Event quit{};
+      quit.type = SDL_EVENT_QUIT;
+      SDL_PushEvent(&quit);
       return;
     }
   }
@@ -220,7 +248,6 @@ bool App::handle(SDL_Event& e) {
     case SDL_EVENT_QUIT:
       return false;
     case SDL_EVENT_KEY_DOWN:
-      if (e.key.scancode == SDL_SCANCODE_ESCAPE) return false;
       on_key(e.key, true);
       break;
     case SDL_EVENT_KEY_UP:
@@ -271,7 +298,7 @@ bool App::handle(SDL_Event& e) {
       on_gamepad_axis(e.gaxis.which, e.gaxis.axis, e.gaxis.value);
       break;
     case SDL_EVENT_DROP_FILE:
-      if (e.drop.data) load_cart(e.drop.data);
+      if (e.drop.data) load_cart(e.drop.data, true);
       break;
     case SDL_EVENT_WINDOW_FOCUS_LOST:
       console_.input.release_all();
@@ -290,8 +317,14 @@ bool App::iterate() {
   last_ns_ = now;
   accum_ns_ = std::min<uint64_t>(accum_ns_, kFrameNs * kMaxCatchUpFrames);
   while (accum_ns_ >= kFrameNs) {
-    console_.tick();
+    studio_.tick();
     accum_ns_ -= kFrameNs;
+  }
+  // The editors draw their own cursor; games get the system one.
+  if (studio_.playing() != cursor_visible_) {
+    cursor_visible_ = studio_.playing();
+    if (cursor_visible_) SDL_ShowCursor();
+    else SDL_HideCursor();
   }
   draw();
   return true;
@@ -302,11 +335,11 @@ void App::draw() {
   SDL_RenderClear(renderer_);
   SDL_FRect dst{0, 0, float(kScreenW), float(kScreenH)};
   if (crt_on_) {
-    crt_.apply(console_.display(), crt_buf_.data());
+    crt_.apply(studio_.display(), crt_buf_.data());
     SDL_UpdateTexture(crt_tex_, nullptr, crt_buf_.data(), Crt::kW * 4);
     SDL_RenderTexture(renderer_, crt_tex_, nullptr, &dst);
   } else {
-    SDL_UpdateTexture(screen_tex_, nullptr, console_.display(), kScreenW * 4);
+    SDL_UpdateTexture(screen_tex_, nullptr, studio_.display(), kScreenW * 4);
     SDL_RenderTexture(renderer_, screen_tex_, nullptr, &dst);
   }
   SDL_RenderPresent(renderer_);

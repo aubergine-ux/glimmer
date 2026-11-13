@@ -7,6 +7,7 @@
 
 #include <SDL3/SDL.h>
 
+#include "editors/studio.hpp"
 #include "platform/crt.hpp"
 #include "runtime/console.hpp"
 
@@ -23,7 +24,7 @@ struct Options {
 // drives the console at a fixed 60 Hz regardless of display refresh rate.
 class App {
  public:
-  App() = default;
+  App();
   ~App();
 
   bool init(const Options& opts);
@@ -31,8 +32,8 @@ class App {
   bool handle(SDL_Event& e);    // false once the app should quit
 
  private:
-  void load_cart(const std::string& path);
-  void run_boot_cart();
+  void load_cart(const std::string& path, bool play);
+  void new_cart();
   void draw();
   void toggle_fullscreen();
   void save_persist();
@@ -53,14 +54,15 @@ class App {
   std::array<SDL_Gamepad*, kPlayers> pads_{};
 
   Console console_;
+  editors::Studio studio_;
   Crt crt_;
   std::vector<uint32_t> crt_buf_;
   std::vector<float> audio_buf_;
-  std::string cart_path_;
   std::string prefs_;
   bool crt_on_ = false;
   bool fullscreen_ = false;
   bool persist_dirty_ = false;
+  bool cursor_visible_ = true;
   uint8_t mouse_buttons_ = 0;
   std::array<std::array<int, 2>, kPlayers> stick_{};  // last digital stick direction per axis
   uint64_t last_ns_ = 0;

@@ -36,7 +36,7 @@ if(GLIMMER_BUILD_APP)
 
   add_executable(glimmer WIN32 MACOSX_BUNDLE
     app/main.cpp app/tools.cpp
-    platform/app.cpp platform/boot_cart.cpp)
+    platform/app.cpp)
   target_include_directories(glimmer PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
   target_compile_options(glimmer PRIVATE ${GLIMMER_WARNINGS})
   target_link_libraries(glimmer PRIVATE glimmer_editors glimmer_crt SDL3::SDL3)
