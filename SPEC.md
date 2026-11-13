@@ -61,6 +61,10 @@ values into `0x18200` at runtime.
   color 0 is transparent by default. Fill patterns do not apply to sprites.
 - Text uses the built-in 3 × 5 font in a 4 × 6 cell, so 64 columns by 24 rows
   fit on screen. The descenders of `g j p q y , ;` use the cell's sixth row.
+- Strings are UTF-8. ASCII prints as itself, and `ë ç Ë Ç` print as glyphs
+  138–141. Glyphs 128–137 are symbols. Other characters print as `?`. A byte
+  that isn't part of a valid UTF-8 sequence prints as the glyph with that
+  code, so `"\134"` is the star symbol.
 
 ## Sprites and map
 
