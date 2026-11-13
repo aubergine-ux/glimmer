@@ -9,6 +9,9 @@
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
 #endif
+#ifdef _WIN32
+#include <windows.h>
+#endif
 
 #include "app/tools.hpp"
 #include "platform/app.hpp"
@@ -38,6 +41,14 @@ void usage() {
 }  // namespace
 
 SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[]) {
+#ifdef _WIN32
+  // The exe uses the GUI subsystem; reattach to the terminal it was started
+  // from so --help, --export and --headless can print.
+  if (argc > 1 && AttachConsole(ATTACH_PARENT_PROCESS)) {
+    std::freopen("CONOUT$", "w", stdout);
+    std::freopen("CONOUT$", "w", stderr);
+  }
+#endif
   glim::platform::Options opts;
   glim::tools::Headless headless;
   bool tool = false;
