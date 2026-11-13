@@ -20,8 +20,17 @@ GLIMMER = Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / "build" / "glimmer"
 
 # Demo carts shown in the README grid: (cart, frames to skip, frames to record, extra args).
 CARTS = [
-    ("sprout", 0, 240, ["--press", "right@10-200", "--press", "a@40-42", "--press", "a@100-102",
-                        "--press", "a@150-152"]),
+    ("sprout", 0, 330, ["--press", "a@5-6", "--press", "right@20-320", "--press", "a@60-74",
+                        "--press", "a@125-138", "--press", "a@190-200", "--press", "a@250-264"]),
+    ("starfall", 0, 330, ["--press", "a@5-6", "--press", "a@20-330", "--press", "left@40-90",
+                          "--press", "right@120-220", "--press", "up@150-190", "--press", "b@260-261"]),
+    ("crates", 0, 240, ["--press", "right@20-21", "--press", "right@40-41", "--press", "right@60-61",
+                        "--press", "a@110-111", "--press", "down@140-141", "--press", "right@160-161",
+                        "--press", "right@180-181", "--press", "down@200-201"]),
+    ("loops", 0, 240, []),
+    ("bloom", 240, 120, []),
+    ("learn", 0, 360, ["--press", "right@60-61", "--press", "right@120-121", "--press", "a@140-170",
+                       "--press", "right@200-201", "--press", "right@260-261"]),
     ("orbit", 30, 150, []),
     ("hello", 0, 180, ["--press", "right@0-45", "--press", "up@20-50", "--press", "a@60-62",
                        "--press", "left@70-150", "--press", "down@100-130", "--press", "a@140-142"]),
