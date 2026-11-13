@@ -5,8 +5,9 @@ add_executable(glimmer_tests
   test_audio.cpp
   test_input.cpp
   test_cart.cpp
+  test_runtime.cpp
 )
 target_compile_options(glimmer_tests PRIVATE ${GLIMMER_WARNINGS})
-target_link_libraries(glimmer_tests PRIVATE glimmer_gfx glimmer_audio glimmer_input glimmer_cart glimmer_doctest)
+target_link_libraries(glimmer_tests PRIVATE glimmer_gfx glimmer_audio glimmer_input glimmer_runtime glimmer_doctest)
 target_compile_definitions(glimmer_tests PRIVATE GLIMMER_TEST_DATA="${CMAKE_CURRENT_SOURCE_DIR}/data")
 add_test(NAME glimmer_tests COMMAND glimmer_tests)
