@@ -333,7 +333,7 @@ the studio to player mode, which has no editors; Esc shows a pause overlay.
 
 | Workflow | What it does |
 |---|---|
-| `ci.yml` | Builds and tests on Linux, macOS, Windows and WebAssembly (tests under node), smoke-tests the carts, and runs the suite under ASan and UBSan |
+| `ci.yml` | Builds and tests on Linux, macOS, Windows and WebAssembly (tests under node), smoke-tests the carts natively and in headless Chrome (`tools/web_smoke.py`), and runs the suite under ASan and UBSan |
 | `pages.yml` | Deploys the web console to GitHub Pages |
 | `release.yml` | On a `v*` tag, builds self-contained desktop packages (SDL linked statically; a universal binary on macOS) and publishes a GitHub release with notes taken from the changelog |
 
