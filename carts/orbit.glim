@@ -1,0 +1,135 @@
+glimmer cart 1
+[meta]
+title = orbit
+author = glimmer
+spec = 1
+[code]
+-- orbit.glim: a tour of the glimmer drawing api.
+-- every sprite is drawn from ascii art at startup with sset(),
+-- so the whole cart is readable as plain text.
+
+-- one character per pixel: "." is transparent, otherwise a
+-- base-32 color index (0-9, a-v).
+local art = {
+  [1] = { -- ship, pointing up
+    "...vv...",
+    "..v55v..",
+    "..5ii5..",
+    ".v5445v.",
+    "v554455v",
+    "v5v55v5v",
+    "5..aa..5",
+    "...cc...",
+  },
+  [2] = { -- small comet
+    "........",
+    "....vv..",
+    "...v5v..",
+    "..v55...",
+    ".455....",
+    "34......",
+    "2.......",
+    "........",
+  },
+}
+
+local function paint(n, rows)
+  local sx, sy = n % 16 * 8, flr(n / 16) * 8
+  for y, row in ipairs(rows) do
+    for x = 1, #row do
+      local ch = sub(row, x, x)
+      if ch ~= "." then sset(sx + x - 1, sy + y - 1, tonumber(ch, 32)) end
+    end
+  end
+end
+
+local stars = {}
+local cx, cy, r = 128, 80, 26
+
+function _init()
+  for n, rows in pairs(art) do paint(n, rows) end
+  -- print the title once, then copy it from the screen into the sprite
+  -- sheet (rows 16-21) so sspr() can draw it at any size later.
+  cls(0)
+  print("GLIMMER", 0, 0, 31)
+  for row = 0, 5 do memcpy((16 + row) * 128, 0x1a000 + row * 256, 32) end
+  for i = 1, 90 do
+    -- three depth layers: farther stars are dimmer and slower
+    local layer = 1 + i % 3
+    add(stars, {x = rnd(256), y = rnd(144), layer = layer})
+  end
+  music(0)
+end
+
+-- the ring is split in two halves so the planet can sit between them:
+-- clip() limits drawing to the back or front half of the screen.
+local function ring(front)
+  if front then clip(0, cy, 256, 144) else clip(0, 0, 256, cy) end
+  for i = 0, 2 do
+    oval(cx - 52 + i, cy - 9 + i, cx + 52 - i, cy + 9 - i, i == 1 and 17 or 16)
+  end
+  clip()
+end
+
+local function planet()
+  circfill(cx, cy, r, 24)
+  -- dithered terminator: fillp draws a checkerboard of two colors
+  fillp(0xa5a5, 23)
+  circfill(cx + 6, cy + 4, r - 4, 24)
+  fillp()
+  circfill(cx + 10, cy + 7, r - 10, 23)
+  -- a highlight and a few cloud bands
+  circfill(cx - 10, cy - 10, 5, 25)
+  circfill(cx - 12, cy - 12, 2, 26)
+  for i = -1, 1 do
+    local y = cy + i * 9 + sin(t() / 4 + i) * 2
+    line(cx - 18 + i * 4, y, cx + 4 + i * 6, y, 25)
+  end
+end
+
+function _draw()
+  cls(1)
+
+  for s in all(stars) do
+    s.x = (s.x - s.layer * 0.15) % 256
+    pset(s.x, s.y, ({7, 6, 5})[s.layer])
+  end
+
+  -- the comet streaks diagonally and wraps around
+  local ct = t() * 40 % 400
+  spr(2, 300 - ct, -20 + ct * 0.5)
+
+  ring(false)
+  planet()
+
+  -- the ship orbits on an ellipse; rspr turns it to face its direction
+  local a = t() / 6
+  local sx, sy = cx + cos(a) * 70, cy + sin(a) * 22
+  local behind = sin(a) < 0
+  if behind then rspr(1, sx - 4, sy - 4, a + 0.5, 1) end
+  ring(true)
+  if not behind then rspr(1, sx - 8, sy - 8, a + 0.5, 2, 1, 1) end
+
+  -- wavy title: each 3x5 letter is stretched to 9x15 and bobs on its own
+  -- phase. pal() recolors the white source pixels per letter.
+  local colors = {29, 30, 17, 21, 28, 25, 4}
+  for i = 0, 6 do
+    local x = 128 - 7 * 6 + i * 12
+    local y = 8 + sin(t() / 2 + i / 10) * 3
+    pal(31, 2)
+    sspr(i * 4, 16, 3, 5, x + 1, y + 1, 9, 15)
+    pal(31, colors[i + 1])
+    sspr(i * 4, 16, 3, 5, x, y, 9, 15)
+  end
+  pal()
+
+  local tips = {"rspr() rotates sprites", "fillp() dithers shapes",
+                "clip() splits the rings", "music() plays the synth"}
+  local tip = tips[flr(t() / 3) % #tips + 1]
+  print(tip, 128 - textwidth(tip) / 2, 132, 6)
+end
+[sfx]
+0c0020008914890c890c890c8514850c850c850c8c148c0c8c0c8c0c8714870c870c870c8914890c890c890c8514850c850c850c8c148c0c8c0c8c0c8714870c870c870c
+06002000a10da409a80dad09a10da409a80dad099d0da109a40da9099d0da109a40da909a40da809ab0db009a40da809ab0db0099f0da309a60dab099f0da309a60dab09
+[music]
+80814040
