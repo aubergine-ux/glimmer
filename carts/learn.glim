@@ -1,0 +1,204 @@
+glimmer cart 1
+[meta]
+title = learn
+author = glimmer
+spec = 1
+[code]
+-- learn.glim: an interactive tour of glimmer.
+-- left and right turn the page. each lesson shows real code next to
+-- what it does, and some ask you to try something.
+\
+-- every lesson has a title, a few lines of text, the code it's about,
+-- a draw function for its demo, and optionally a task to complete.
+lessons = {}
+\
+function lesson(l) add(lessons, l) end
+\
+lesson {
+  title = "hello!",
+  text = {"glimmer is a tiny console.", "a game is three functions", "it calls for you:"},
+  code = {"function _init()   -- once", "function _update() -- 60/sec", "function _draw()   -- 60/sec"},
+  draw = function(x, y, t)
+    spr(1 + flr(t * 4) % 2, x + 40, y + 16 + sin(t) * 3)
+    print("frame " .. flr(t * 60), x + 20, y + 34, 6)
+  end,
+}
+\
+lesson {
+  title = "drawing",
+  text = {"the screen is 256 by 144", "pixels. x goes right,", "y goes down."},
+  code = {"cls(1)", "line(0, 0, 40, 20, 12)", "rectfill(10, 10, 30, 20, 24)", "circfill(60, 20, 8, 17)"},
+  draw = function(x, y, t)
+    line(x, y, x + 40, y + 20 + sin(t / 2) * 10, 12)
+    rectfill(x + 10, y + 26, x + 30, y + 36, 24)
+    circfill(x + 64, y + 20, 8 + sin(t) * 3, 17)
+    tri(x + 50, y + 44, x + 80, y + 44, x + 65, y + 30, 21)
+  end,
+}
+\
+lesson {
+  title = "colors",
+  text = {"there are 32 colors, 0-31.", "pal() swaps one for another.", "try it: hold z."},
+  code = {"pal(17, 11)  -- yellow is red", "spr(1, x, y)", "pal()        -- back to normal"},
+  task = function() return btn("a") end,
+  draw = function(x, y, t)
+    for c = 0, 31 do
+      rectfill(x + c % 8 * 10, y + flr(c / 8) * 8, x + c % 8 * 10 + 8, y + flr(c / 8) * 8 + 6, c)
+    end
+    if btn("a") then pal(17, 11) pal(18, 12) end
+    spr(1, x + 36, y + 38)
+    pal()
+  end,
+}
+\
+lesson {
+  title = "text",
+  text = {"print draws text anywhere,", "in any color. it returns", "where the text ends."},
+  code = {"print(\"hi!\", 10, 10, 30)", "local w = textwidth(\"hi!\")"},
+  draw = function(x, y, t)
+    local msg = "glimmer!"
+    for i = 1, #msg do
+      local c = ({29, 30, 12, 17, 21, 25, 4, 5})[i]
+      print(sub(msg, i, i), x + i * 7, y + 16 + sin(t + i / 8) * 4, c)
+    end
+  end,
+}
+\
+lesson {
+  title = "sprites",
+  text = {"sprites are 8x8 pictures", "you draw in the sprite", "editor. spr draws them."},
+  code = {"spr(1, x, y)", "spr(1, x, y, 1, 1, true) -- flip", "rspr(1, x, y, angle, 2) -- spin"},
+  draw = function(x, y, t)
+    spr(1, x + 6, y + 10)
+    spr(1, x + 30, y + 10, 1, 1, true)
+    rspr(1, x + 56, y + 6, t / 2, 2)
+  end,
+}
+\
+lesson {
+  title = "buttons",
+  text = {"btn checks a button.", "try it: move glim around", "with the arrow keys."},
+  code = {"if btn(\"left\") then", "  x = x - 1", "end"},
+  task = function() return moved_far end,
+  draw = function(x, y, t)
+    rect(x, y, x + 88, y + 50, 2)
+    spr(1 + flr(t * 6) % 2, x + px, y + py)
+    -- the font has arrow glyphs: codes 128-131
+    local names = {"left", "right", "up", "down", "a", "b"}
+    local labels = {"\128", "\129", "\130", "\131", "a", "b"}
+    for i, n in ipairs(names) do
+      print(labels[i], x + 14 + (i - 1) * 12, y + 54, btn(n) and 17 or 7)
+    end
+  end,
+}
+\
+lesson {
+  title = "sound",
+  text = {"sfx plays a sound effect", "you made in the sound", "editor. try it: press z, x."},
+  code = {"sfx(0)    -- play effect 0", "music(0)  -- start a song"},
+  task = function() return played >= 2 end,
+  draw = function(x, y, t)
+    for i = 1, 4 do
+      local h = sin(t * 2 + i / 4) * 6 + (ring > 0 and ring / 2 or 0)
+      rectfill(x + 10 + i * 12, y + 30 - h, x + 18 + i * 12, y + 30, 25)
+    end
+    print("z: blip   x: chirp", x + 8, y + 40, 6)
+  end,
+}
+\
+lesson {
+  title = "your turn",
+  text = {"press esc for the editors.", "f1 there lists every", "function. ctrl+r runs."},
+  code = {"-- in the shell, try:", "new", "browse"},
+  draw = function(x, y, t)
+    for i = 0, 6 do
+      spr(3, x + 10 + i * 10, y + 20 + sin(t + i / 7) * 6)
+    end
+  end,
+}
+\
+function _init()
+  page = 1
+  px, py, moved_far = 40, 20, false
+  played, ring = 0, 0
+  done = {}
+  music(0)
+end
+\
+function _update()
+  if btnp("right") and page < #lessons and page ~= 6 then page = page + 1 sfx(0) end
+  if btnp("left") and page > 1 and page ~= 6 then page = page - 1 sfx(0) end
+  -- on the buttons page the arrows move glim; use l/r (q/w) to turn the page
+  if page == 6 then
+    if btn("left") then px = px - 1 end
+    if btn("right") then px = px + 1 end
+    if btn("up") then py = py - 1 end
+    if btn("down") then py = py + 1 end
+    px, py = mid(1, px, 80), mid(1, py, 42)
+    if abs(px - 40) > 25 or abs(py - 20) > 15 then moved_far = true end
+  end
+  if btnp("l") and page > 1 then page = page - 1 sfx(0) end
+  if btnp("r") and page < #lessons then page = page + 1 sfx(0) end
+  if page == 7 then
+    if btnp("a") then sfx(0) played = played + 1 ring = 12 end
+    if btnp("b") then sfx(1) played = played + 1 ring = 12 end
+  end
+  ring = max(0, ring - 1)
+\
+  local l = lessons[page]
+  if l.task and not done[page] and l.task() then
+    done[page] = true
+    sfx(3)
+  end
+end
+\
+function _draw()
+  cls(1)
+  local l = lessons[page]
+  -- page title and progress dots
+  print(l.title, 8, 6, 17)
+  for i = 1, #lessons do
+    local c = i == page and 30 or (done[i] and 21 or 2)
+    circfill(256 - 8 - (#lessons - i) * 8, 8, 2, c)
+  end
+\
+  for i, line in ipairs(l.text) do print(line, 8, 20 + i * 8, 5) end
+\
+  -- the code box
+  rectfill(6, 62, 132, 66 + #l.code * 8, 0)
+  rect(6, 62, 132, 66 + #l.code * 8, 2)
+  for i, line in ipairs(l.code) do print(line, 10, 58 + i * 8, 25) end
+\
+  -- the live demo
+  rectfill(144, 20, 250, 120, 0)
+  rect(144, 20, 250, 120, 2)
+  l.draw(152, 30, t())
+\
+  if l.task then
+    local ok = done[page]
+    print(ok and "\134 done!" or "try it!", 8, 112, ok and 21 or 16)
+  end
+  local nav = page == 6 and "q/w turn the page" or "left/right turn the page"
+  print(nav, 128 - textwidth(nav) / 2, 134, 7)
+end
+[gfx]
+00000000000h0000000h000000uu0uu0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000000hih00000hih0000uuuuuu0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000hhivihh0hhivihh00uuuuuu0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+000000000hi0i0000hi0i00000uuuu00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000000hiih0000hiih00000uu000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+000000000hh0hh000hh0hh0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+000000000h000h00h00000h000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+[sfx]
+0200000064146bb0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+030000009835a4359fb100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+040000008c7c88b4000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+020000009f11a311a611abb10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+1000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+1000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+1000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+1000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+100020008c0c8c0c930c930c910c910c8f0c8f0c8c0c8c0c930c930c910c910c8f0c8f0c8c0c8c0c930c930c910c910c8f0c8f0c8c0c8c0c930c930c910c910c8f0c8f0c
+08002000a4890000a6890000a8890000ab890000a8890000a6890000a48900009f890000a4890000a6890000a8890000ab890000a8890000a6890000a48900009f890000
+[music]
+88894040
