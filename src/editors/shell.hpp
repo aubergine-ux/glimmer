@@ -19,7 +19,7 @@ class Shell : public Editor {
   void update(ui::Ui& ui, const ui::Rect& body) override;
   void reset() override {}
   std::string status() const override;
-  bool wants_escape() const override { return browsing_; }
+  bool wants_escape() const override { return browsing_ || keys_step_ >= 0; }
 
   void boot();
   bool booting() const { return boot_frame_ >= 0; }
@@ -53,6 +53,8 @@ class Shell : public Editor {
   void cmd_info();
   void cmd_help();
   void update_browser(ui::Ui& ui, const ui::Rect& body);
+  void update_keys(ui::Ui& ui);
+  void print_banner();
   void load_entry(Entry& e);
   void open_entry(Entry& e, bool play);
 
@@ -66,6 +68,8 @@ class Shell : public Editor {
 
   int boot_frame_ = -1;
 
+  int keys_step_ = -1;  // button being rebound by the keys command
+  bool keys_prompted_ = false;
   bool browsing_ = false;
   std::vector<Entry> entries_;
   int sel_ = 0;

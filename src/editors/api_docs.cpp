@@ -97,7 +97,7 @@ constexpr std::array kDocs = {
     // System
     ApiDoc{"time", "system", "time()", "seconds since start"},
     ApiDoc{"t", "system", "t()", "seconds since start"},
-    ApiDoc{"stat", "system", "stat(n)", "system info: 1 = cpu"},
+    ApiDoc{"stat", "system", "stat(n)", "system info: 1 is cpu"},
     ApiDoc{"printh", "system", "printh(...)", "print to the host terminal"},
     ApiDoc{"trace", "system", "trace([msg])", "stack traceback"},
     // Callbacks

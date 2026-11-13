@@ -93,6 +93,7 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[]) {
       headless.crt = true;
     } else if (a == "--scale") {
       opts.scale = std::atoi(next());
+      opts.scale_given = true;
     } else if (a == "--player") {
       opts.player = true;
     } else if (a == "--bundle") {

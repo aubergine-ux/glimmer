@@ -6,9 +6,12 @@
 
 #include "editors/api_docs.hpp"
 #include "editors/studio.hpp"
+#include "ui/i18n.hpp"
 #include "gfx/font.hpp"
 
 namespace glim::editors {
+
+using ui::tr;
 
 namespace {
 
@@ -315,7 +318,7 @@ void CodeEditor::duplicate_line() {
 void CodeEditor::undo() {
   int c = history_.undo();
   if (c < 0) {
-    studio_.message("nothing to undo");
+    studio_.message(tr("nothing to undo"));
     return;
   }
   reindex();
@@ -326,7 +329,7 @@ void CodeEditor::undo() {
 void CodeEditor::redo() {
   int c = history_.redo();
   if (c < 0) {
-    studio_.message("nothing to redo");
+    studio_.message(tr("nothing to redo"));
     return;
   }
   reindex();
@@ -466,7 +469,7 @@ void CodeEditor::find_next(bool backwards) {
     }
   }
   if (found == std::string::npos) {
-    studio_.message("no matches for \"" + find_ + "\"", true);
+    studio_.message(tr("no matches for \"{0}\"", find_), true);
     return;
   }
   tab_ = tab_of_line(line_of(found));
@@ -497,7 +500,7 @@ void CodeEditor::replace_all() {
   cursor_ = anchor_ = std::min(cursor_, s.size());
   if (n) studio_.mark_dirty();
   end_edit();
-  studio_.message("replaced " + std::to_string(n) + (n == 1 ? " match" : " matches"));
+  studio_.message(tr(n == 1 ? "replaced {0} match" : "replaced {0} matches", std::to_string(n)));
 }
 
 bool CodeEditor::call_context(std::string& fn, int& arg) const {
@@ -811,7 +814,7 @@ void CodeEditor::draw_tabs(ui::Ui& ui, const ui::Rect& r) {
     std::string label = tabs_[i].name;
     if (label.size() > 12) label = label.substr(0, 11) + ".";
     int w = gfx::Gfx::text_width(label) + 6;
-    ui::Rect tr{x, r.y, w, r.h};
+    ui::Rect tab_rect{x, r.y, w, r.h};
     bool sel = i == tab_;
     if (renaming_ == i) {
       if (ui.text_field({x, r.y, 52, r.h}, rename_buf_, true) || ui.in().keyp(key_from_name("escape"))) {
@@ -827,9 +830,9 @@ void CodeEditor::draw_tabs(ui::Ui& ui, const ui::Rect& r) {
       x += 54;
       continue;
     }
-    ui.fill(tr, sel ? th.panel : (ui.hovered(tr) ? th.hot : th.raised));
+    ui.fill(tab_rect, sel ? th.panel : (ui.hovered(tab_rect) ? th.hot : th.raised));
     ui.text(label, x + 3, r.y + 2, sel ? th.text : th.dim);
-    if (ui.clicked_in(tr)) {
+    if (ui.clicked_in(tab_rect)) {
       if (sel && ui.double_clicked() && i > 0) {
         renaming_ = i;
         rename_buf_ = tabs_[i].name;
@@ -838,10 +841,10 @@ void CodeEditor::draw_tabs(ui::Ui& ui, const ui::Rect& r) {
         select_tab(i);
       }
     }
-    if (ui.hovered(tr) && i > 0) ui.tooltip("double-click to rename");
+    if (ui.hovered(tab_rect) && i > 0) ui.tooltip(tr("double-click to rename"));
     x += w + 1;
   }
-  if (x + 9 < r.right() && ui.icon_button(x, r.y - 1, ui::Icon::kPlus, false, "new tab")) {
+  if (x + 9 < r.right() && ui.icon_button(x, r.y - 1, ui::Icon::kPlus, false, tr("new tab"))) {
     std::string name = "tab " + std::to_string(tabs_.size());
     size_t end = text().size();
     std::string add = (end && text().back() != '\n' ? "\n" : "") + std::string(kTabMarker) + name + "\n";
@@ -922,17 +925,17 @@ void CodeEditor::draw_find_bar(ui::Ui& ui, const ui::Rect& r) {
   ui.text_field(ff, find_, find_focus_ == 1);
   int x = ff.right() + 3;
   if (replace_open_) {
-    ui.text("with", x, r.y + 2, th.dim);
+    ui.text(tr("with"), x, r.y + 2, th.dim);
     ui::Rect rf{x + 18, r.y + 1, 60, 7};
     if (ui.clicked_in(rf)) find_focus_ = 2;
     ui.text_field(rf, replace_with_, find_focus_ == 2);
     x = rf.right() + 3;
-    if (ui.button({x, r.y + 1, 9, 7}, "1", false, "replace this match")) replace_one();
-    if (ui.button({x + 10, r.y + 1, 13, 7}, "all", false, "replace every match")) replace_all();
+    if (ui.button({x, r.y + 1, 9, 7}, "1", false, tr("replace this match"))) replace_one();
+    if (ui.button({x + 10, r.y + 1, 13, 7}, "all", false, tr("replace every match"))) replace_all();
     x += 25;
   }
-  if (ui.button({x, r.y + 1, 13, 7}, "Aa", find_case_, "match case")) find_case_ = !find_case_;
-  if (ui.icon_button(r.right() - 10, r.y - 1, ui::Icon::kClose, false, "close (esc)")) {
+  if (ui.button({x, r.y + 1, 13, 7}, "Aa", find_case_, tr("match case"))) find_case_ = !find_case_;
+  if (ui.icon_button(r.right() - 10, r.y - 1, ui::Icon::kClose, false, tr("close (esc)"))) {
     find_open_ = replace_open_ = false;
     find_focus_ = 0;
   }
@@ -1009,10 +1012,10 @@ void CodeEditor::draw_reference(ui::Ui& ui, const ui::Rect& body) {
   ui.begin_popup(box);
   ui.frame(box, th.panel);
   ui.fill({box.x + 1, box.y + 1, box.w - 2, 8}, th.accent);
-  ui.text("api reference", box.x + 4, box.y + 3, th.accent_text);
-  ui.text("type to filter, enter inserts", box.x + 70, box.y + 3, th.accent_text);
+  ui.text(tr("api reference"), box.x + 4, box.y + 3, th.accent_text);
+  ui.text(tr("type to filter, enter inserts"), box.right() - 3 - gfx::Gfx::text_width(tr("type to filter, enter inserts")), box.y + 3, th.accent_text);
   ui.text_field({box.x + 3, box.y + 11, box.w - 6, 8}, ref_filter_, false);
-  if (ref_filter_.empty()) ui.text("filter...", box.x + 5, box.y + 13, th.raised + 1);
+  if (ref_filter_.empty()) ui.text(tr("filter..."), box.x + 5, box.y + 13, th.raised + 1);
 
   auto docs = api_docs();
   std::vector<int> shown;
@@ -1056,7 +1059,7 @@ void CodeEditor::draw_reference(ui::Ui& ui, const ui::Rect& body) {
     std::string sig(d.signature);
     if (int(sig.size()) * gfx::kCharW > box.w - 8) sig = sig.substr(0, size_t((box.w - 8) / gfx::kCharW - 1)) + ".";
     ui.text(sig, box.x + 4, y + 1, th.text);
-    ui.text(d.help, box.x + 4, y + 7, th.dim);
+    ui.text(tr(d.help), box.x + 4, y + 7, th.dim);
   }
   ui.end_popup();
 }
@@ -1089,13 +1092,13 @@ void CodeEditor::update(ui::Ui& ui, const ui::Rect& body) {
 }
 
 std::string CodeEditor::status() const {
-  if (exec_line_ >= 0) return "stopped on line " + std::to_string(exec_line_ + 1) + "  f5 continue  f10 over  f11 into";
-  if (error_line_ >= 0 && !error_msg_.empty()) return "line " + std::to_string(error_line_ + 1) + ": " + error_msg_;
+  if (exec_line_ >= 0) return tr("stopped on line {0}  f5 continue  f10 over  f11 into", std::to_string(exec_line_ + 1));
+  if (error_line_ >= 0 && !error_msg_.empty()) return tr("line {0}: {1}", std::to_string(error_line_ + 1), error_msg_);
   auto [l, c] = cursor_pos();
-  std::string s = "ln " + std::to_string(l + 1) + " col " + std::to_string(c + 1);
-  if (has_selection()) s += "  (" + std::to_string(selection().second - selection().first) + " selected)";
-  if (!hint_.empty()) s += "  " + hint_;
-  else s += "  f1: api reference  ctrl+b: breakpoint";
+  std::string s = tr("ln {0} col {1}", std::to_string(l + 1), std::to_string(c + 1));
+  if (has_selection()) s += "  " + tr("({0} selected)", std::to_string(selection().second - selection().first));
+  if (!hint_.empty()) s += "  " + tr(hint_);
+  else s += "  " + tr("f1: api reference  ctrl+b: breakpoint");
   return s;
 }
 

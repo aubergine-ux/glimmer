@@ -32,6 +32,8 @@ class Studio {
     std::function<void(const std::string&)> set_clipboard;
     std::string capture_dir = {};  // where F6 screenshots and F8 recordings go
     std::string runtime = {};      // this program, copied by the shell's bundle command
+    std::function<void()> settings_changed = {};
+    std::function<bool(int)> set_window_scale = {};
   };
 
   Studio(Console& console, Host host);
@@ -63,6 +65,16 @@ class Studio {
   void set_capture_dir(const std::string& dir) { host_.capture_dir = dir; }
   void set_runtime(const std::string& path) { host_.runtime = path; }
   const std::string& runtime() const { return host_.runtime; }
+  void settings_changed() {
+    if (host_.settings_changed) host_.settings_changed();
+  }
+  bool set_window_scale(int n) { return host_.set_window_scale && host_.set_window_scale(n); }
+  void set_high_contrast(bool on);
+  bool high_contrast() const { return high_contrast_; }
+  void set_host_callbacks(std::function<void()> changed, std::function<bool(int)> scale) {
+    host_.settings_changed = std::move(changed);
+    host_.set_window_scale = std::move(scale);
+  }
   bool playing() const { return playing_; }
   bool save();
   bool save_as(const std::string& path);
@@ -111,6 +123,7 @@ class Studio {
   bool paused_ = false;
   bool debugging_ = false;
   bool player_ = false;
+  bool high_contrast_ = false;
   bool player_paused_ = false;
   int debug_scroll_ = 0;
   std::set<std::string> debug_open_;  // expanded table variables

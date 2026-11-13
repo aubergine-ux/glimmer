@@ -6,8 +6,11 @@
 #include "editors/clipboard.hpp"
 #include "editors/sfx_editor.hpp"
 #include "editors/studio.hpp"
+#include "ui/i18n.hpp"
 
 namespace glim::editors {
+
+using ui::tr;
 
 namespace {
 
@@ -112,13 +115,13 @@ void MusicEditor::copy() {
   const auto& m = studio_.cart().music;
   std::vector<uint8_t> bytes(m.begin() + pattern_ * kChannels, m.begin() + (pattern_ + 1) * kChannels);
   studio_.set_clipboard(encode_bytes("pattern", bytes));
-  studio_.message("copied pattern " + std::to_string(pattern_));
+  studio_.message(tr("copied pattern {0}", std::to_string(pattern_)));
 }
 
 void MusicEditor::paste() {
   std::vector<uint8_t> bytes;
   if (!decode_bytes(studio_.clipboard(), "pattern", bytes) || bytes.size() != size_t(kChannels)) {
-    studio_.message("the clipboard has no pattern", true);
+    studio_.message(tr("the clipboard has no pattern"), true);
     return;
   }
   history_.begin(Target::kMusic);
@@ -165,7 +168,7 @@ void MusicEditor::draw_header(ui::Ui& ui, int y) {
   const auto& th = ui.theme();
   ui.fill({0, y, kScreenW, 10}, th.raised);
   int p = pattern_;
-  if (ui.spinner(2, y + 2, "pattern", p, 0, kPatterns - 1, "pattern ([ and ])")) pattern_ = p;
+  if (ui.spinner(2, y + 2, "pattern", p, 0, kPatterns - 1, tr("pattern ([ and ])"))) pattern_ = p;
   struct Flag {
     int ch;
     const char* label;
@@ -180,13 +183,13 @@ void MusicEditor::draw_header(ui::Ui& ui, int y) {
   for (const auto& f : kFlags) {
     bool on = channel_byte(f.ch) & kFlag;
     int w = int(std::string_view(f.label).size()) * 4 + 5;
-    if (ui.button({x, y + 1, w, 8}, f.label, on, f.tip)) set_channel_byte(f.ch, uint8_t(channel_byte(f.ch) ^ kFlag));
+    if (ui.button({x, y + 1, w, 8}, f.label, on, tr(f.tip))) set_channel_byte(f.ch, uint8_t(channel_byte(f.ch) ^ kFlag));
     x += w + 2;
   }
   bool playing = studio_.console().audio.music_pattern() >= 0;
-  if (ui.icon_button(x + 2, y, playing ? ui::Icon::kStop : ui::Icon::kPlay, playing, "play song from here (space)")) play(true);
-  if (ui.button({x + 14, y + 1, 30, 8}, "pattern", false, "play this pattern once (enter)")) play(false);
-  if (ui.button({x + 46, y + 1, 26, 8}, "follow", follow_, "scroll with the music while it plays")) follow_ = !follow_;
+  if (ui.icon_button(x + 2, y, playing ? ui::Icon::kStop : ui::Icon::kPlay, playing, tr("play song from here (space)"))) play(true);
+  if (ui.button({x + 14, y + 1, 30, 8}, "pattern", false, tr("play this pattern once (enter)"))) play(false);
+  if (ui.button({x + 46, y + 1, 26, 8}, "follow", follow_, tr("scroll with the music while it plays"))) follow_ = !follow_;
 }
 
 void MusicEditor::draw_channels(ui::Ui& ui, int y) {
@@ -195,10 +198,10 @@ void MusicEditor::draw_channels(ui::Ui& ui, int y) {
   for (int ch = 0; ch < kChannels; ++ch) {
     int x = kGridX + ch * kColW;
     bool on = channel_on(ch);
-    if (ui.toggle(x, y + 1, on, th.ok, "channel " + std::to_string(ch) + " on/off"))
+    if (ui.toggle(x, y + 1, on, th.ok, tr("channel {0} on/off", std::to_string(ch))))
       set_channel_byte(ch, uint8_t(channel_byte(ch) ^ kDisabled));
     int n = channel_sfx(ch);
-    if (ui.spinner(x + 10, y + 1, "sfx", n, 0, kSfxCount - 1, "sound effect this channel plays"))
+    if (ui.spinner(x + 10, y + 1, "sfx", n, 0, kSfxCount - 1, tr("sound effect this channel plays")))
       set_channel_byte(ch, uint8_t((channel_byte(ch) & 0xC0) | n));
   }
 }
@@ -257,10 +260,10 @@ void MusicEditor::draw_piano(ui::Ui& ui, const ui::Rect& r) {
   const auto& th = ui.theme();
   auto& g = ui.g();
   ui.fill(r, th.panel);
-  ui.text("octave", r.x + 2, r.y + 3, th.dim);
-  if (ui.icon_button(r.x, r.y + 9, ui::Icon::kMinus, false, "octave down (-)")) octave_ = std::max(0, octave_ - 1);
+  ui.text(tr("octave"), r.x + 2, r.y + 3, th.dim);
+  if (ui.icon_button(r.x, r.y + 9, ui::Icon::kMinus, false, tr("octave down (-)"))) octave_ = std::max(0, octave_ - 1);
   ui.text(std::to_string(octave_ + 2), r.x + 12, r.y + 11, th.text);
-  if (ui.icon_button(r.x + 17, r.y + 9, ui::Icon::kPlus, false, "octave up (=)")) octave_ = std::min(4, octave_ + 1);
+  if (ui.icon_button(r.x + 17, r.y + 9, ui::Icon::kPlus, false, tr("octave up (=)"))) octave_ = std::min(4, octave_ + 1);
 
   constexpr int kWhiteW = 9, kWhiteH = 18, kBlackW = 5, kBlackH = 11;
   int kx = r.x + 34, ky = r.y;
@@ -308,7 +311,7 @@ void MusicEditor::draw_piano(ui::Ui& ui, const ui::Rect& r) {
 
   int px = kx + 14 * kWhiteW + 6;
   ui.text("step", px, r.y + 3, th.dim);
-  ui.spinner(px, r.y + 10, "", advance_, 0, 8, "rows the cursor moves after each note");
+  ui.spinner(px, r.y + 10, "", advance_, 0, 8, tr("rows the cursor moves after each note"));
 }
 
 void MusicEditor::draw_pens(ui::Ui& ui, int y) {
@@ -320,7 +323,7 @@ void MusicEditor::draw_pens(ui::Ui& ui, int y) {
     bool sel = w == pen_wave_;
     ui.fill(r, sel ? th.accent : th.bg);
     ui.text(std::string(1, "0123456789abcdef"[w]), r.x + 2, r.y + 1, sel ? th.accent_text : wave_color(w));
-    if (ui.hovered(r)) ui.tooltip(wave_name(w));
+    if (ui.hovered(r)) ui.tooltip(tr(wave_name(w)));
     if (ui.clicked_in(r)) pen_wave_ = w;
   }
   ui.text("vol", 152, y + 2, th.dim);
@@ -332,9 +335,9 @@ void MusicEditor::draw_pens(ui::Ui& ui, int y) {
   ui.text("fx", 210, y + 2, th.dim);
   ui::Rect fr{220, y + 1, 34, 7};
   ui.fill(fr, th.bg);
-  ui.text(effect_name(pen_effect_), fr.x + 2, fr.y + 1, th.text);
+  ui.text(tr(effect_name(pen_effect_)), fr.x + 2, fr.y + 1, th.text);
   if (ui.hovered(fr)) {
-    ui.tooltip("click or scroll to change the effect");
+    ui.tooltip(tr("click or scroll to change the effect"));
     if (ui.clicked(0)) pen_effect_ = (pen_effect_ + 1) % 8;
     if (ui.wheel()) pen_effect_ = (pen_effect_ + 8 - ui.wheel()) % 8;
   }
@@ -356,10 +359,12 @@ std::string MusicEditor::status() const {
   int row = hover_row_ >= 0 ? hover_row_ : row_, ch = hover_ch_ >= 0 ? hover_ch_ : channel_;
   audio::Step s = step(ch, row);
   if (s.volume) {
-    std::snprintf(buf, sizeof buf, "ch%d sfx %d row %d: %s %s vol %d %s", ch, channel_sfx(ch), row,
-                  note_name(s.pitch).c_str(), wave_name(s.wave), s.volume, effect_name(s.effect));
+    return tr("ch{0} sfx {1} row {2}: {3} {4} vol {5} {6}", std::to_string(ch), std::to_string(channel_sfx(ch)),
+              std::to_string(row), note_name(s.pitch), tr(wave_name(s.wave)), std::to_string(s.volume),
+              tr(effect_name(s.effect)));
   } else {
-    std::snprintf(buf, sizeof buf, "ch%d sfx %d row %d  keys z-m and q-i play notes, space plays", ch, channel_sfx(ch), row);
+    return tr("ch{0} sfx {1} row {2}  keys z-m and q-i play notes, space plays", std::to_string(ch),
+              std::to_string(channel_sfx(ch)), std::to_string(row));
   }
   return buf;
 }

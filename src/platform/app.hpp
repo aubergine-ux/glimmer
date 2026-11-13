@@ -19,6 +19,7 @@ struct Options {
   bool crt = false;
   bool player = false;
   int scale = 4;
+  bool scale_given = false;
 };
 
 // Desktop/web frontend: owns the SDL window, audio device and gamepads, and
@@ -68,6 +69,7 @@ class App {
   bool persist_dirty_ = false;
   bool cursor_visible_ = true;
   bool small_output_ = false;
+  int scale_ = 4;
   uint8_t mouse_buttons_ = 0;
   std::array<std::array<int, 2>, kPlayers> stick_{};  // last digital stick direction per axis
   uint64_t last_ns_ = 0;

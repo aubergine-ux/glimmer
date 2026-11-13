@@ -5,8 +5,11 @@
 
 #include "editors/sheet.hpp"
 #include "editors/studio.hpp"
+#include "ui/i18n.hpp"
 
 namespace glim::editors {
+
+using ui::tr;
 
 namespace {
 
@@ -63,11 +66,11 @@ SpriteEditor::Area SpriteEditor::target() const {
 
 void SpriteEditor::undo() {
   commit_floating();
-  if (history_.undo() < 0) studio_.message("nothing to undo");
+  if (history_.undo() < 0) studio_.message(tr("nothing to undo"));
 }
 
 void SpriteEditor::redo() {
-  if (history_.redo() < 0) studio_.message("nothing to redo");
+  if (history_.redo() < 0) studio_.message(tr("nothing to redo"));
 }
 
 void SpriteEditor::commit_floating() {
@@ -99,7 +102,7 @@ void SpriteEditor::copy() {
       for (int x = 0; x < a.w; ++x) clip.px.push_back(uint8_t(sheet_px(studio_.cart(), a.x + x, a.y + y)));
   }
   studio_.set_clipboard(encode_pixels(clip));
-  studio_.message("copied " + std::to_string(clip.w) + "x" + std::to_string(clip.h) + " pixels");
+  studio_.message(tr("copied {0}x{1} pixels", std::to_string(clip.w), std::to_string(clip.h)));
 }
 
 void SpriteEditor::cut() {
@@ -119,7 +122,7 @@ void SpriteEditor::cut() {
 void SpriteEditor::paste() {
   PixelClip clip;
   if (!decode_pixels(studio_.clipboard(), clip)) {
-    studio_.message("the clipboard has no pixels", true);
+    studio_.message(tr("the clipboard has no pixels"), true);
     return;
   }
   commit_floating();
@@ -130,7 +133,7 @@ void SpriteEditor::paste() {
   float_y_ = a.y;
   tool_ = Tool::kSelect;
   has_sel_ = false;
-  studio_.message("drag to place, click outside to drop");
+  studio_.message(tr("drag to place, click outside to drop"));
 }
 
 void SpriteEditor::flip(bool horizontal) {
@@ -154,7 +157,7 @@ void SpriteEditor::rotate() {
   commit_floating();
   Area a = target();
   if (a.w != a.h) {
-    studio_.message("rotate needs a square selection", true);
+    studio_.message(tr("rotate needs a square selection"), true);
     return;
   }
   auto& c = studio_.cart();
@@ -444,16 +447,16 @@ void SpriteEditor::draw_tools(ui::Ui& ui, int x, int y) {
   };
   for (int i = 0; i < 7; ++i) {
     const auto& t = kTools[i];
-    if (ui.icon_button(x + (i % 2) * 12, y + (i / 2) * 10, t.icon, tool_ == t.tool, t.tip)) {
+    if (ui.icon_button(x + (i % 2) * 12, y + (i / 2) * 10, t.icon, tool_ == t.tool, tr(t.tip))) {
       commit_floating();
       tool_ = t.tool;
     }
   }
-  if (ui.icon_button(x + 12, y + 30, ui::Icon::kGrid, grid_, "grid (g)")) grid_ = !grid_;
-  if (ui.icon_button(x, y + 40, ui::Icon::kFlipH, false, "flip horizontally (h)")) flip(true);
-  if (ui.icon_button(x + 12, y + 40, ui::Icon::kFlipV, false, "flip vertically (v)")) flip(false);
-  if (ui.icon_button(x, y + 50, ui::Icon::kRotate, false, "rotate clockwise (t)")) rotate();
-  if (ui.icon_button(x + 12, y + 50, ui::Icon::kOnion, onion_, "onion skin: show the previous sprite (o)"))
+  if (ui.icon_button(x + 12, y + 30, ui::Icon::kGrid, grid_, tr("grid (g)"))) grid_ = !grid_;
+  if (ui.icon_button(x, y + 40, ui::Icon::kFlipH, false, tr("flip horizontally (h)"))) flip(true);
+  if (ui.icon_button(x + 12, y + 40, ui::Icon::kFlipV, false, tr("flip vertically (v)"))) flip(false);
+  if (ui.icon_button(x, y + 50, ui::Icon::kRotate, false, tr("rotate clockwise (t)"))) rotate();
+  if (ui.icon_button(x + 12, y + 50, ui::Icon::kOnion, onion_, tr("onion skin: show the previous sprite (o)")))
     onion_ = !onion_;
 }
 
@@ -461,7 +464,7 @@ void SpriteEditor::draw_flags(ui::Ui& ui, int x, int y) {
   auto& c = studio_.cart();
   for (int f = 0; f < 8; ++f) {
     bool on = (c.flags[size_t(sprite_)] >> f) & 1;
-    if (ui.toggle(x + f * 8, y, on, kFlagColors[f], "flag " + std::to_string(f) + " - read with fget()")) {
+    if (ui.toggle(x + f * 8, y, on, kFlagColors[f], tr("flag {0} - read with fget()", std::to_string(f)))) {
       history_.begin(Target::kFlags);
       c.flags[size_t(sprite_)] = uint8_t(c.flags[size_t(sprite_)] ^ (1 << f));
       history_.commit();
@@ -489,7 +492,7 @@ void SpriteEditor::draw_preview(ui::Ui& ui, const ui::Rect& r) {
     }
   ui.g().rect(r.x, r.y, r.right(), r.bottom(), th.shadow);
   if (ui.hovered(r)) {
-    ui.tooltip("preview: wheel sets frames, shift+wheel speed");
+    ui.tooltip(tr("preview: wheel sets frames, shift+wheel speed"));
     if (ui.wheel() && ui.in().shift()) anim_fps_ = std::clamp(anim_fps_ + ui.wheel(), 1, 30);
     else if (ui.wheel()) anim_frames_ = std::clamp(anim_frames_ + ui.wheel(), 1, 16);
     if (ui.clicked(0)) anim_ = !anim_;
@@ -524,11 +527,11 @@ void SpriteEditor::update(ui::Ui& ui, const ui::Rect& body) {
   draw_canvas(ui, {kCanvasX, y0 + 2, kCanvas, kCanvas});
   draw_tools(ui, kColumnX, y0 + 2);
 
-  if (ui.button({kColumnX, y0 + 64, 12, 8}, "s0", sheet_ == 0, "sheet 0: sprites 0-255")) set_sprite(sprite_ % 256);
-  if (ui.button({kColumnX + 13, y0 + 64, 12, 8}, "s1", sheet_ == 1, "sheet 1: sprites 256-511"))
+  if (ui.button({kColumnX, y0 + 64, 12, 8}, "s0", sheet_ == 0, tr("sheet 0: sprites 0-255"))) set_sprite(sprite_ % 256);
+  if (ui.button({kColumnX + 13, y0 + 64, 12, 8}, "s1", sheet_ == 1, tr("sheet 1: sprites 256-511")))
     set_sprite(256 + sprite_ % 256);
   draw_preview(ui, {kColumnX, y0 + 74, kPreview, kPreview});
-  if (ui.icon_button(kColumnX - 1, y0 + 101, anim_ ? ui::Icon::kStop : ui::Icon::kPlay, anim_, "play animation (space)"))
+  if (ui.icon_button(kColumnX - 1, y0 + 101, anim_ ? ui::Icon::kStop : ui::Icon::kPlay, anim_, tr("play animation (space)")))
     anim_ = !anim_;
   ui.text(std::to_string(anim_frames_) + "f", kColumnX + 11, y0 + 102, th.dim);
   ui.text(std::to_string(anim_fps_) + "/s", kColumnX + 11, y0 + 108, th.dim);
@@ -542,7 +545,7 @@ void SpriteEditor::update(ui::Ui& ui, const ui::Rect& body) {
   for (int i = 0; i < 3; ++i) {
     int s = 1 << i;
     std::string label = std::to_string(s * 8);
-    if (ui.button({kCanvasX + 18 + i * 11, ry, 10, 7}, label, size_ == s, "edit " + label + "x" + label + " pixels (" + std::to_string(s) + ")")) {
+    if (ui.button({kCanvasX + 18 + i * 11, ry, 10, 7}, label, size_ == s, tr("edit {0}x{0} pixels ({1})", label, std::to_string(s)))) {
       size_ = s;
       set_sprite(sprite_);
     }
@@ -554,15 +557,13 @@ void SpriteEditor::update(ui::Ui& ui, const ui::Rect& body) {
 
 std::string SpriteEditor::status() const {
   static constexpr const char* kToolNames[] = {"pencil", "fill", "line", "rect", "circle", "select", "picker"};
-  char buf[96];
-  if (hover_x_ >= 0) {
-    std::snprintf(buf, sizeof buf, "#%03d  x%d y%d  color %d  %s", sprite_, hover_x_ - origin_x(), hover_y_ - origin_y(),
-                  sheet_px(studio_.cart(), hover_x_, hover_y_), kToolNames[int(tool_)]);
-  } else {
-    std::snprintf(buf, sizeof buf, "#%03d  %dx%d  %s  [ ] change sprite  1 2 4 zoom", sprite_, block(), block(),
-                  kToolNames[int(tool_)]);
-  }
-  return buf;
+  char id[8];
+  std::snprintf(id, sizeof id, "#%03d", sprite_);
+  std::string tool = tr(kToolNames[int(tool_)]);
+  if (hover_x_ >= 0)
+    return tr("{0}  x{1} y{2}  color {3}  {4}", id, std::to_string(hover_x_ - origin_x()),
+              std::to_string(hover_y_ - origin_y()), std::to_string(sheet_px(studio_.cart(), hover_x_, hover_y_)), tool);
+  return tr("{0}  {1}x{1}  {2}  [ ] change sprite  1 2 4 zoom", id, std::to_string(block()), tool);
 }
 
 }  // namespace glim::editors

@@ -5,6 +5,7 @@
 #include <filesystem>
 
 #include "app/tools.hpp"
+#include "ui/i18n.hpp"
 #include "cart/bundle.hpp"
 #include "cart/image.hpp"
 #include "editors/shell.hpp"
@@ -79,13 +80,22 @@ bool App::init(const Options& opts) {
     SDL_free(p);
   }
   crt_on_ = opts.crt;
+  scale_ = std::max(1, opts.scale);
   load_settings();
+  if (opts.scale_given) scale_ = std::max(1, opts.scale);
+  studio_.set_host_callbacks([this] { save_settings(); },
+                             [this](int n) {
+                               scale_ = n;
+                               if (fullscreen_) toggle_fullscreen();
+                               SDL_SetWindowSize(window_, kScreenW * n, kScreenH * n);
+                               save_settings();
+                               return true;
+                             });
   // Captures land somewhere easy to find: the user's pictures folder if SDL knows it.
   if (const char* pics = SDL_GetUserFolder(SDL_FOLDER_PICTURES)) studio_.set_capture_dir(std::string(pics) + "glimmer");
   else if (!prefs_.empty()) studio_.set_capture_dir(prefs_ + "captures");
 
-  int scale = std::max(1, opts.scale);
-  if (!SDL_CreateWindowAndRenderer("Glimmer", kScreenW * scale, kScreenH * scale,
+  if (!SDL_CreateWindowAndRenderer("Glimmer", kScreenW * scale_, kScreenH * scale_,
                                    SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY, &window_, &renderer_)) {
     SDL_Log("window creation failed: %s", SDL_GetError());
     return false;
@@ -142,14 +152,45 @@ void App::load_settings() {
     auto text = console_.input.keymap().save();
     cart::write_file(pref_path("keys.cfg"), {reinterpret_cast<const uint8_t*>(text.data()), text.size()});
   }
+  // settings.cfg: one "key = value" per line.
   auto settings = read_text(pref_path("settings.cfg"));
-  if (settings.find("crt = on") != std::string::npos) crt_on_ = true;
+  std::string lang;
+  for (size_t start = 0; start < settings.size();) {
+    size_t nl = settings.find('\n', start);
+    std::string line = settings.substr(start, nl == std::string::npos ? std::string::npos : nl - start);
+    start = nl == std::string::npos ? settings.size() : nl + 1;
+    auto eq = line.find(" = ");
+    if (eq == std::string::npos) continue;
+    std::string key = line.substr(0, eq), value = line.substr(eq + 3);
+    if (key == "crt") crt_on_ = value == "on";
+    else if (key == "language") lang = value;
+    else if (key == "theme") studio_.set_high_contrast(value == "contrast");
+    else if (key == "scale") scale_ = std::clamp(std::atoi(value.c_str()), 1, 8);
+  }
+  if (lang.empty()) {
+    // First run: follow the system language when we have it.
+    int n = 0;
+    if (SDL_Locale** locales = SDL_GetPreferredLocales(&n)) {
+      for (int i = 0; i < n && lang.empty(); ++i)
+        if (ui::set_language(locales[i]->language)) lang = locales[i]->language;
+      SDL_free(locales);
+    }
+  }
+  if (!lang.empty()) ui::set_language(lang);
+  // User language files (lang/<code>.txt in the data folder) add or override translations.
+  std::error_code ec;
+  for (const auto& f : std::filesystem::directory_iterator(pref_path("lang"), ec))
+    if (f.path().extension() == ".txt") ui::load_strings(f.path().stem().string(), read_text(f.path().string()));
 }
 
 void App::save_settings() {
   if (prefs_.empty()) return;
-  std::string text = std::string("crt = ") + (crt_on_ ? "on" : "off") + "\n";
+  std::string text = std::string("crt = ") + (crt_on_ ? "on" : "off") + "\n" + "language = " + ui::language() + "\n" +
+                     "theme = " + (studio_.high_contrast() ? "contrast" : "default") + "\n" +
+                     "scale = " + std::to_string(scale_) + "\n";
   cart::write_file(pref_path("settings.cfg"), {reinterpret_cast<const uint8_t*>(text.data()), text.size()});
+  auto keys = console_.input.keymap().save();
+  cart::write_file(pref_path("keys.cfg"), {reinterpret_cast<const uint8_t*>(keys.data()), keys.size()});
 }
 
 void App::new_cart() {

@@ -6,8 +6,11 @@
 
 #include "editors/sheet.hpp"
 #include "editors/studio.hpp"
+#include "ui/i18n.hpp"
 
 namespace glim::editors {
+
+using ui::tr;
 
 namespace {
 
@@ -132,7 +135,7 @@ void MapEditor::stroke(int cx, int cy) {
 
 void MapEditor::copy() {
   if (!has_sel_) {
-    studio_.message("select cells first (s)", true);
+    studio_.message(tr("select cells first (s)"), true);
     return;
   }
   CellClip clip;
@@ -142,7 +145,7 @@ void MapEditor::copy() {
   for (int y = 0; y < clip.h; ++y)
     for (int x = 0; x < clip.w; ++x) clip.cells.push_back(cell(layer_, x0 + x, y0 + y));
   studio_.set_clipboard(encode_cells(clip));
-  studio_.message("copied " + std::to_string(clip.w) + "x" + std::to_string(clip.h) + " cells");
+  studio_.message(tr("copied {0}x{1} cells", std::to_string(clip.w), std::to_string(clip.h)));
 }
 
 void MapEditor::cut() {
@@ -158,13 +161,13 @@ void MapEditor::cut() {
 void MapEditor::paste() {
   CellClip clip;
   if (!decode_cells(studio_.clipboard(), clip)) {
-    studio_.message("the clipboard has no map cells", true);
+    studio_.message(tr("the clipboard has no map cells"), true);
     return;
   }
   stamp_ = clip;
   tool_ = Tool::kPencil;
   has_sel_ = false;
-  studio_.message("pasted as a stamp - click to place it");
+  studio_.message(tr("pasted as a stamp - click to place it"));
 }
 
 void MapEditor::keys(ui::Ui& ui, const ui::Rect& view) {
@@ -361,7 +364,7 @@ void MapEditor::draw_toolbar(ui::Ui& ui, const ui::Rect& bar) {
   };
   int x = bar.x + 1;
   for (const auto& t : kTools) {
-    if (ui.icon_button(x, bar.y, t.icon, tool_ == t.tool, t.tip, bar.h)) tool_ = t.tool;
+    if (ui.icon_button(x, bar.y, t.icon, tool_ == t.tool, tr(t.tip), bar.h)) tool_ = t.tool;
     x += 10;
   }
   x += 3;
@@ -369,25 +372,25 @@ void MapEditor::draw_toolbar(ui::Ui& ui, const ui::Rect& bar) {
   ui::Rect cur{x, bar.y, 9, bar.h};
   ui.fill(cur, th.bg);
   draw_sprite(ui, studio_.cart(), stamp_.cells[0] & kIdMask, x + 1, bar.y + 1, 1, -1);
-  if (ui.hovered(cur)) ui.tooltip("tiles (tab)");
+  if (ui.hovered(cur)) ui.tooltip(tr("tiles (tab)"));
   if (ui.clicked_in(cur)) picker_ = !picker_;
   x += 12;
 
   for (int l = 0; l < kMapLayers; ++l) {
     ui::Rect lr{x, bar.y + 1, 9, bar.h - 2};
     bool active = l == layer_;
-    if (ui.button(lr, std::to_string(l + 1), active, "layer " + std::to_string(l + 1) + " (" + std::to_string(l + 1) + "), right-click hides it"))
+    if (ui.button(lr, std::to_string(l + 1), active, tr("layer {0} ({0}), right-click hides it", std::to_string(l + 1))))
       layer_ = l;
     if (ui.hovered(lr) && ui.clicked(1)) visible_[size_t(l)] = !visible_[size_t(l)];
     if (!visible_[size_t(l)]) ui.g().line(lr.x, lr.bottom(), lr.right(), lr.y, th.error);
     x += 10;
   }
   x += 3;
-  if (ui.icon_button(x, bar.y, ui::Icon::kGrid, screen_guides_, "screen guides (g)", bar.h)) screen_guides_ = !screen_guides_;
+  if (ui.icon_button(x, bar.y, ui::Icon::kGrid, screen_guides_, tr("screen guides (g)"), bar.h)) screen_guides_ = !screen_guides_;
   x += 12;
   static constexpr const char* kZoom[] = {"1x", "1/2", "1/4"};
   for (int z = 0; z < 3; ++z) {
-    if (ui.button({x, bar.y + 1, 14, bar.h - 2}, kZoom[z], zoom_ == z, z == 2 ? "whole map" : "zoom (mouse wheel)")) zoom_ = z;
+    if (ui.button({x, bar.y + 1, 14, bar.h - 2}, kZoom[z], zoom_ == z, z == 2 ? "whole map" : tr("zoom (mouse wheel)"))) zoom_ = z;
     x += 15;
   }
 }
@@ -404,7 +407,7 @@ void MapEditor::draw_picker(ui::Ui& ui, const ui::Rect& body) {
   draw_sheet_area(ui, studio_.cart(), 0, picker_sheet_ * kSheetH, kSheetW, rows * 8, sheet.x, sheet.y, 1, th.bg);
   for (int i = 0; i < 2; ++i)
     if (ui.button({box.x + 2 + i * 14, box.bottom() - 9, 13, 8}, "s" + std::to_string(i), picker_sheet_ == i)) picker_sheet_ = i;
-  ui.text("drag for a multi-tile stamp", box.x + 32, box.bottom() - 7, th.dim);
+  ui.text(tr("drag for a multi-tile stamp"), box.x + 32, box.bottom() - 7, th.dim);
 
   if (ui.hovered(sheet)) {
     int col = (ui.mx() - sheet.x) / 8, row = (ui.my() - sheet.y) / 8;
@@ -441,16 +444,12 @@ void MapEditor::update(ui::Ui& ui, const ui::Rect& body) {
 }
 
 std::string MapEditor::status() const {
-  char buf[96];
   static constexpr const char* kToolNames[] = {"paint", "rect", "fill", "select", "pick", "auto-tile"};
-  if (hover_cx_ >= 0 && hover_cy_ >= 0 && hover_cx_ < kMapW && hover_cy_ < kMapH) {
-    std::snprintf(buf, sizeof buf, "x%d y%d  tile #%d  layer %d  %s", hover_cx_, hover_cy_,
-                  cell(layer_, hover_cx_, hover_cy_) & kIdMask, layer_ + 1, kToolNames[int(tool_)]);
-  } else {
-    std::snprintf(buf, sizeof buf, "layer %d  %s  tab: tiles  wheel: zoom  space+drag: pan", layer_ + 1,
-                  kToolNames[int(tool_)]);
-  }
-  return buf;
+  std::string tool = tr(kToolNames[int(tool_)]), layer = std::to_string(layer_ + 1);
+  if (hover_cx_ >= 0 && hover_cy_ >= 0 && hover_cx_ < kMapW && hover_cy_ < kMapH)
+    return tr("x{0} y{1}  tile #{2}  layer {3}  {4}", std::to_string(hover_cx_), std::to_string(hover_cy_),
+              std::to_string(cell(layer_, hover_cx_, hover_cy_) & kIdMask), layer, tool);
+  return tr("layer {0}  {1}  tab: tiles  wheel: zoom  space+drag: pan", layer, tool);
 }
 
 }  // namespace glim::editors

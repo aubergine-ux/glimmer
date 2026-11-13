@@ -1,4 +1,5 @@
 #include "editors/studio.hpp"
+#include "ui/i18n.hpp"
 
 #include <algorithm>
 #include <chrono>
@@ -16,6 +17,8 @@
 #include "gfx/font.hpp"
 
 namespace glim::editors {
+
+using ui::tr;
 
 namespace {
 using input::key_from_name;
@@ -48,7 +51,7 @@ end
 void rgb_text(std::vector<uint32_t>& buf, std::string_view s, int x, int y, uint32_t color, uint32_t shadow) {
   for (int pass = 0; pass < 2; ++pass) {
     int cx = x + (pass == 0 ? 1 : 0), cy = y + (pass == 0 ? 1 : 0);
-    for (char ch : s) {
+    for (uint8_t ch : gfx::glyphs(s)) {
       for (int row = 0; row < gfx::kGlyphRows; ++row) {
         uint8_t bits = gfx::glyph_row(uint8_t(ch), row);
         for (int col = 0; col < gfx::kGlyphW; ++col) {
@@ -84,6 +87,11 @@ Studio::~Studio() = default;
 
 CodeEditor& Studio::code_editor() { return static_cast<CodeEditor&>(*editors_[kCodeTab]); }
 Shell& Studio::shell() { return static_cast<Shell&>(*editors_[kShellTab]); }
+
+void Studio::set_high_contrast(bool on) {
+  high_contrast_ = on;
+  ui_.set_theme(on ? ui::high_contrast_theme() : ui::default_theme());
+}
 
 void Studio::new_cart() {
   cart::Cart c;
@@ -139,7 +147,7 @@ void Studio::pause() {
   playing_ = false;
   paused_ = true;
   console_.input.release_all();
-  message("paused: esc resumes with your changes, ctrl+r restarts");
+  message(tr("paused: esc resumes with your changes, ctrl+r restarts"));
 }
 
 void Studio::resume() {
@@ -151,7 +159,7 @@ void Studio::resume() {
     const auto& e = console_.error();
     code_editor().show_error(e.line, e.message);
     select_editor(kCodeTab);
-    message("can't resume, line " + std::to_string(e.line) + ": " + e.message, true);
+    message(tr("can't resume, line {0}: {1}", std::to_string(e.line), e.message), true);
     return;
   }
   playing_ = true;
@@ -177,7 +185,7 @@ void Studio::stop() {
     const auto& e = console_.error();
     code_editor().show_error(e.line, e.message);
     select_editor(kCodeTab);
-    message("runtime error on line " + std::to_string(e.line) + ": " + e.message, true);
+    message(tr("runtime error on line {0}: {1}", std::to_string(e.line), e.message), true);
   }
   console_.stop();
   console_.input.release_all();
@@ -201,7 +209,7 @@ bool Studio::save() {
   }
   path_ = target;
   dirty_ = false;
-  message("saved " + std::filesystem::path(target).filename().string());
+  message(tr("saved {0}", std::filesystem::path(target).filename().string()));
   return true;
 }
 
@@ -264,7 +272,7 @@ void Studio::screenshot() {
     }
   std::string path = capture_path(".png");
   bool ok = cart::write_file(path, cart::encode_png(img));
-  toast_ = ok ? "saved " + std::filesystem::path(path).filename().string() : "can't save screenshot";
+  toast_ = ok ? tr("saved {0}", std::filesystem::path(path).filename().string()) : tr("can't save screenshot");
   toast_frames_ = kToastFrames;
 }
 
@@ -272,7 +280,7 @@ void Studio::toggle_recording() {
   if (gif_) {
     bool ok = cart::write_file(gif_path_, gif_->finish());
     gif_.reset();
-    toast_ = ok ? "saved " + std::filesystem::path(gif_path_).filename().string() : "can't save recording";
+    toast_ = ok ? tr("saved {0}", std::filesystem::path(gif_path_).filename().string()) : tr("can't save recording");
     toast_frames_ = kToastFrames;
     return;
   }
@@ -285,9 +293,9 @@ void Studio::draw_overlays() {
   if (player_ && player_paused_) {
     // Dim the frozen game and show what the keys do.
     for (auto& px : out_) px = (px >> 2) & 0x3F3F3F;
-    const char* lines[] = {"paused", "esc or enter: resume", "ctrl+r: restart"};
+    std::string lines[] = {tr("paused"), tr("esc or enter: resume"), tr("ctrl+r: restart")};
     for (int i = 0; i < 3; ++i) {
-      int w = int(std::string_view(lines[i]).size()) * gfx::kCharW;
+      int w = gfx::Gfx::text_width(lines[i]);
       rgb_text(out_, lines[i], (kScreenW - w) / 2, 58 + i * 10, i == 0 ? 0xffd166 : 0xf2e9ff, 0x0b0a12);
     }
   }
@@ -296,7 +304,7 @@ void Studio::draw_overlays() {
     rgb_rect(out_, kScreenW - 6, 3, kScreenW - 4, 5, 0xe8534a);
   }
   if (toast_frames_ > 0) {
-    int w = int(toast_.size()) * gfx::kCharW + 6;
+    int w = gfx::Gfx::text_width(toast_) + 6;
     rgb_rect(out_, (kScreenW - w) / 2, kScreenH - 16, (kScreenW + w) / 2, kScreenH - 7, 0x1f1a33);
     rgb_text(out_, toast_, (kScreenW - w) / 2 + 3, kScreenH - 14, 0xf2e9ff, 0x0b0a12);
   }
@@ -387,7 +395,7 @@ void Studio::tick_game() {
       cart_.label[i] = console_.mem.peek(addr::kScreenPal + px) & 31;
     }
     dirty_ = true;
-    message("label captured");
+    message(tr("label captured"));
   }
 }
 
@@ -420,18 +428,18 @@ void Studio::draw_top_bar() {
   ui_.fill({0, 0, kScreenW, kTopH}, th.raised);
   for (int i = 0; i < int(editors_.size()); ++i) {
     auto& e = *editors_[size_t(i)];
-    std::string tip = std::string(e.name()) + " (alt+" + std::to_string(i + 1) + ")";
+    std::string tip = tr(e.name()) + " (alt+" + std::to_string(i + 1) + ")";
     if (ui_.icon_button(1 + i * 10, 0, e.icon(), i == active_, tip, kTopH)) select_editor(i);
   }
   std::string title = cart_.get_meta("title");
-  if (title.empty()) title = path_.empty() ? "untitled" : std::filesystem::path(path_).stem().string();
+  if (title.empty()) title = path_.empty() ? tr("untitled") : std::filesystem::path(path_).stem().string();
   if (dirty_) title += "*";
   ui_.text_centered(title, {0, 0, kScreenW, kTopH}, th.text);
-  if (ui_.icon_button(kScreenW - 22, 0, ui::Icon::kSave, false, "save (ctrl+s)", kTopH)) save();
+  if (ui_.icon_button(kScreenW - 22, 0, ui::Icon::kSave, false, tr("save (ctrl+s)"), kTopH)) save();
   if (paused_) {
-    ui_.text("paused", kScreenW - 50, 2, th.warn);
-    if (ui_.icon_button(kScreenW - 11, 0, ui::Icon::kPlay, true, "resume with changes (esc)", kTopH)) resume();
-  } else if (ui_.icon_button(kScreenW - 11, 0, ui::Icon::kPlay, false, "run (ctrl+r)", kTopH)) {
+    ui_.text(tr("paused"), kScreenW - 26 - gfx::Gfx::text_width(tr("paused")), 2, th.warn);
+    if (ui_.icon_button(kScreenW - 11, 0, ui::Icon::kPlay, true, tr("resume with changes (esc)"), kTopH)) resume();
+  } else if (ui_.icon_button(kScreenW - 11, 0, ui::Icon::kPlay, false, tr("run (ctrl+r)"), kTopH)) {
     play();
   }
 }
@@ -442,11 +450,11 @@ void Studio::draw_debug_panel(const ui::Rect& r) {
   ui_.fill(r, th.panel);
   g.line(r.x, r.y, r.x, r.bottom(), th.shadow);
   int x = r.x + 2, y = r.y + 1;
-  if (ui_.icon_button(x, y, ui::Icon::kPlay, false, "continue (f5)")) debug_continue(script::StepMode::kNone);
-  if (ui_.button({x + 11, y + 1, 17, 8}, "over", false, "step over (f10)")) debug_continue(script::StepMode::kOver);
-  if (ui_.button({x + 29, y + 1, 17, 8}, "into", false, "step into (f11)")) debug_continue(script::StepMode::kInto);
-  if (ui_.button({x + 47, y + 1, 13, 8}, "out", false, "step out (shift+f11)")) debug_continue(script::StepMode::kOut);
-  if (ui_.icon_button(x + 61, y, ui::Icon::kStop, false, "stop the game")) {
+  if (ui_.icon_button(x, y, ui::Icon::kPlay, false, tr("continue (f5)"))) debug_continue(script::StepMode::kNone);
+  if (ui_.button({x + 11, y + 1, 17, 8}, "over", false, tr("step over (f10)"))) debug_continue(script::StepMode::kOver);
+  if (ui_.button({x + 29, y + 1, 17, 8}, "into", false, tr("step into (f11)"))) debug_continue(script::StepMode::kInto);
+  if (ui_.button({x + 47, y + 1, 13, 8}, "out", false, tr("step out (shift+f11)"))) debug_continue(script::StepMode::kOut);
+  if (ui_.icon_button(x + 61, y, ui::Icon::kStop, false, tr("stop the game"))) {
     playing_ = true;
     stop();
   }
@@ -532,8 +540,10 @@ void Studio::tick_editor() {
     resume();
     if (playing_) return;
   }
-  // The editors show art in the cart's own colors.
-  std::copy(cart_.palette.begin(), cart_.palette.end(), ui_.mem().data() + addr::kPalette);
+  // The editors show art in the cart's own colors; the high-contrast theme
+  // relies on the default ones, so it keeps them.
+  if (high_contrast_) ui_.g().reset_palette();
+  else std::copy(cart_.palette.begin(), cart_.palette.end(), ui_.mem().data() + addr::kPalette);
   ui_.fill({0, 0, kScreenW, kScreenH}, ui_.theme().panel);
   ui::Rect body{0, kTopH, kScreenW, kScreenH - kTopH - kStatusH};
   if (debugging_ && active_ == kCodeTab) {

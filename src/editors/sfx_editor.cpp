@@ -5,8 +5,11 @@
 
 #include "editors/clipboard.hpp"
 #include "editors/studio.hpp"
+#include "ui/i18n.hpp"
 
 namespace glim::editors {
+
+using ui::tr;
 
 namespace {
 
@@ -103,13 +106,13 @@ void SfxEditor::copy() {
   const auto& b = studio_.cart().sfx;
   std::vector<uint8_t> bytes(b.begin() + sfx_ * kSfxBytes, b.begin() + (sfx_ + 1) * kSfxBytes);
   studio_.set_clipboard(encode_bytes("sfx", bytes));
-  studio_.message("copied sfx " + std::to_string(sfx_));
+  studio_.message(tr("copied sfx {0}", std::to_string(sfx_)));
 }
 
 void SfxEditor::paste() {
   std::vector<uint8_t> bytes;
   if (!decode_bytes(studio_.clipboard(), "sfx", bytes) || bytes.size() != size_t(kSfxBytes)) {
-    studio_.message("the clipboard has no sound effect", true);
+    studio_.message(tr("the clipboard has no sound effect"), true);
     return;
   }
   history_.begin(Target::kSfx);
@@ -123,12 +126,12 @@ void SfxEditor::draw_header(ui::Ui& ui, int y) {
   ui.fill({0, y, kScreenW, 10}, th.raised);
   audio::Sfx s = read();
   int n = sfx_;
-  if (ui.spinner(2, y + 2, "sfx", n, 0, kSfxCount - 1, "sound effect number ([ and ])")) sfx_ = n;
+  if (ui.spinner(2, y + 2, "sfx", n, 0, kSfxCount - 1, tr("sound effect number ([ and ])"))) sfx_ = n;
   int speed = s.speed, ls = s.loop_start, le = s.loop_end;
   bool changed = false;
-  changed |= ui.spinner(52, y + 2, "speed", speed, 1, 255, "step length: speed x 7.5ms");
-  changed |= ui.spinner(110, y + 2, "loop", ls, 0, kSfxSteps, "loop start step");
-  changed |= ui.spinner(152, y + 2, "", le, 0, kSfxSteps, "loop end step (loops while end > start)");
+  changed |= ui.spinner(52, y + 2, "speed", speed, 1, 255, tr("step length: speed x 7.5ms"));
+  changed |= ui.spinner(110, y + 2, "loop", ls, 0, kSfxSteps, tr("loop start step"));
+  changed |= ui.spinner(152, y + 2, "", le, 0, kSfxSteps, tr("loop end step (loops while end > start)"));
   if (changed) {
     history_.begin(Target::kSfx);
     s.speed = uint8_t(speed);
@@ -139,8 +142,8 @@ void SfxEditor::draw_header(ui::Ui& ui, int y) {
     studio_.mark_dirty();
   }
   bool playing = playing_step() >= 0;
-  if (ui.icon_button(188, y, playing ? ui::Icon::kStop : ui::Icon::kPlay, playing, "play (space)")) play();
-  if (ui.icon_button(200, y, ui::Icon::kWave, wavetable_, "draw custom wavetables (w)")) wavetable_ = !wavetable_;
+  if (ui.icon_button(188, y, playing ? ui::Icon::kStop : ui::Icon::kPlay, playing, tr("play (space)"))) play();
+  if (ui.icon_button(200, y, ui::Icon::kWave, wavetable_, tr("draw custom wavetables (w)"))) wavetable_ = !wavetable_;
   ui.text(std::to_string(int(s.speed) * kSfxSteps * audio::kSamplesPerSpeedUnit * 1000 / audio::kSampleRate) + "ms",
           214, y + 3, th.dim);
 }
@@ -272,7 +275,7 @@ void SfxEditor::draw_pens(ui::Ui& ui, int y) {
     bool sel = w == pen_wave_;
     ui.fill(r, sel ? th.accent : (ui.hovered(r) ? th.hot : th.bg));
     ui.text(hex_digit(w), r.x + 2, r.y + 2, sel ? th.accent_text : wave_color(w));
-    if (ui.hovered(r)) ui.tooltip(wave_name(w));
+    if (ui.hovered(r)) ui.tooltip(tr(wave_name(w)));
     if (ui.clicked_in(r)) pen_wave_ = w;
   }
   ui.text("fx", 167, y + 3, th.dim);
@@ -282,7 +285,7 @@ void SfxEditor::draw_pens(ui::Ui& ui, int y) {
     ui.fill(r, sel ? th.accent : (ui.hovered(r) ? th.hot : th.bg));
     char glyph[2] = {kEffectGlyph[e], 0};
     ui.text(glyph, r.x + 2, r.y + 2, sel ? th.accent_text : th.text);
-    if (ui.hovered(r)) ui.tooltip(effect_name(e));
+    if (ui.hovered(r)) ui.tooltip(tr(effect_name(e)));
     if (ui.clicked_in(r)) pen_effect_ = e;
   }
 }
@@ -302,7 +305,7 @@ void SfxEditor::draw_wavetable(ui::Ui& ui, const ui::Rect& r) {
     g.rectfill(x + 1, std::min(mid, mid - h), x + kStepW - 2, std::max(mid, mid - h), 4);
     g.rectfill(x + 1, mid - h, x + kStepW - 2, mid - h, 31);
   }
-  ui.text("wave " + std::to_string(table) + " (pick waves 8-f below)", r.x + 2, r.y + 2, th.dim);
+  ui.text(tr("wave {0} (pick waves 8-f below)", std::to_string(table)), r.x + 2, r.y + 2, th.dim);
   if (ui.clicked_in(r)) {
     ui.capture(kDrawId + 2);
     history_.begin(Target::kWave);
@@ -343,15 +346,15 @@ void SfxEditor::update(ui::Ui& ui, const ui::Rect& body) {
 }
 
 std::string SfxEditor::status() const {
-  if (hover_step_ < 0) return "draw pitch and volume  right-drag erases  space plays  [ ] other sfx";
+  if (hover_step_ < 0) return tr("draw pitch and volume  right-drag erases  space plays  [ ] other sfx");
   audio::Sfx s = read();
   const auto& st = s.steps[size_t(hover_step_)];
   char buf[96];
   if (st.volume == 0) {
-    std::snprintf(buf, sizeof buf, "step %d: rest", hover_step_);
+    return tr("step {0}: rest", std::to_string(hover_step_));
   } else {
-    std::snprintf(buf, sizeof buf, "step %d: %s  %s  vol %d  %s", hover_step_, note_name(st.pitch).c_str(),
-                  wave_name(st.wave), st.volume, effect_name(st.effect));
+    return tr("step {0}: {1}  {2}  vol {3}  {4}", std::to_string(hover_step_), note_name(st.pitch), tr(wave_name(st.wave)),
+              std::to_string(st.volume), tr(effect_name(st.effect)));
   }
   return buf;
 }

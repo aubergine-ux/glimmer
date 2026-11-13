@@ -2,11 +2,13 @@
 
 #include <algorithm>
 #include <cstdio>
+#include <cstdlib>
 
 #include "cart/bundle.hpp"
 #include "cart/cart.hpp"
 #include "editors/studio.hpp"
 #include "gfx/font.hpp"
+#include "ui/i18n.hpp"
 
 namespace glim::editors {
 
@@ -14,6 +16,7 @@ namespace {
 
 using input::key_from_name;
 namespace fs = std::filesystem;
+using ui::tr;
 
 constexpr int kText = 5, kDim = 6, kPrompt = 30, kError = 11, kGood = 21, kTitle = 17, kDirColor = 25;
 constexpr int kMaxLines = 400;
@@ -69,8 +72,10 @@ constexpr const char* kBootLines[] = {
 
 }  // namespace
 
-Shell::Shell(Studio& studio) : Editor(studio), dir_(fs::current_path()) {
-  for (const char* l : kBootLines) print(l, l == kBootLines[2] ? kDim : kText);
+Shell::Shell(Studio& studio) : Editor(studio), dir_(fs::current_path()) { print_banner(); }
+
+void Shell::print_banner() {
+  for (const char* l : kBootLines) print(l == kBootLines[2] ? tr(l) : std::string(l), l == kBootLines[2] ? kDim : kText);
 }
 
 void Shell::set_dir(const fs::path& dir) {
@@ -127,7 +132,7 @@ std::vector<fs::path> Shell::list(bool carts_only) const {
 }
 
 void Shell::cmd_help() {
-  print("commands", kTitle);
+  print(tr("commands"), kTitle);
   static constexpr const char* kHelp[][2] = {
       {"ls", "list carts and folders"},
       {"cd <folder>", "change folder (cd .. goes up)"},
@@ -141,6 +146,10 @@ void Shell::cmd_help() {
       {"share", "copy a link that plays this cart"},
       {"bundle <name>", "build a standalone game"},
       {"title <text>", "name the cart (also author)"},
+      {"lang [code]", "change the console language"},
+      {"theme [name]", "default or contrast"},
+      {"scale <n>", "window size, 1 to 8"},
+      {"keys", "rebind player 1's controls"},
       {"edit", "jump to the code editor"},
       {"cls", "clear the screen"},
       {"reboot", "replay the boot sequence"},
@@ -148,15 +157,15 @@ void Shell::cmd_help() {
   for (const auto& h : kHelp) {
     std::string line = std::string("  ") + h[0];
     line.resize(17, ' ');
-    print(line + h[1], kText);
+    print(line + tr(h[1]), kText);
   }
-  print("esc in a game opens the editors; f6 screenshot, f8 gif", kDim);
+  print(tr("esc in a game opens the editors; f6 screenshot, f8 gif"), kDim);
 }
 
 void Shell::cmd_ls() {
   auto entries = list(false);
   print(dir_.string(), kDim);
-  if (entries.empty()) print("  (no carts here)", kDim);
+  if (entries.empty()) print("  " + tr("(no carts here)"), kDim);
   for (const auto& p : entries) {
     std::error_code ec;
     if (fs::is_directory(p, ec)) print("  " + p.filename().string() + "/", kDirColor);
@@ -172,7 +181,7 @@ void Shell::cmd_cd(const std::string& arg) {
   fs::path p = arg == ".." ? dir_.parent_path() : (fs::path(arg).is_absolute() ? fs::path(arg) : dir_ / arg);
   std::error_code ec;
   if (!fs::is_directory(p, ec)) {
-    print("no folder named " + arg, kError);
+    print(tr("no folder named {0}", arg), kError);
     return;
   }
   dir_ = fs::weakly_canonical(p, ec);
@@ -181,12 +190,12 @@ void Shell::cmd_cd(const std::string& arg) {
 
 void Shell::cmd_load(const std::string& arg) {
   if (arg.empty()) {
-    print("load what? try ls", kError);
+    print(tr("load what? try ls"), kError);
     return;
   }
   fs::path p = resolve(arg, true);
   if (p.empty()) {
-    print("can't find " + arg, kError);
+    print(tr("can't find {0}", arg), kError);
     return;
   }
   cart::Cart c;
@@ -198,45 +207,46 @@ void Shell::cmd_load(const std::string& arg) {
   // .lua files load as code; saving writes a .glim beside them.
   fs::path save_path = p.extension() == ".lua" ? fs::path(p).replace_extension(".glim") : p;
   studio_.open(c, save_path.string(), false);
-  print("loaded " + p.filename().string() + (c.get_meta("title").empty() ? "" : "  \"" + c.get_meta("title") + "\""), kGood);
+  print(tr("loaded {0}", p.filename().string()) + (c.get_meta("title").empty() ? "" : "  \"" + c.get_meta("title") + "\""), kGood);
 }
 
 void Shell::cmd_save(const std::string& arg) {
   if (!arg.empty()) {
-    if (studio_.save_as(resolve(arg, false).string())) print("saved " + resolve(arg, false).filename().string(), kGood);
-    else print("can't save " + arg, kError);
+    if (studio_.save_as(resolve(arg, false).string())) print(tr("saved {0}", resolve(arg, false).filename().string()), kGood);
+    else print(tr("can't save {0}", arg), kError);
     return;
   }
   if (studio_.path().empty()) {
-    print("save as what? save <name>", kError);
+    print(tr("save as what? save <name>"), kError);
     return;
   }
-  if (studio_.save()) print("saved " + fs::path(studio_.path()).filename().string(), kGood);
+  if (studio_.save()) print(tr("saved {0}", fs::path(studio_.path()).filename().string()), kGood);
 }
 
 void Shell::cmd_export(const std::string& arg) {
   if (arg.empty()) {
-    print("export to what? export mygame.png", kError);
+    print(tr("export to what? export mygame.png"), kError);
     return;
   }
   fs::path p = resolve(arg, false);
   cart::Cart c = studio_.cart();
   if (c.label.empty() && p.extension() == ".png") capture_label(c);
   auto r = cart::save_file(p.string(), c);
-  if (r.ok) print("exported " + p.filename().string(), kGood);
+  if (r.ok) print(tr("exported {0}", p.filename().string()), kGood);
   else print(r.error, kError);
 }
 
 void Shell::cmd_info() {
   const auto& c = studio_.cart();
-  print(c.get_meta("title", "untitled") + (c.get_meta("author").empty() ? "" : " by " + c.get_meta("author")), kTitle);
+  std::string title = c.get_meta("title", tr("untitled"));
+  print(c.get_meta("author").empty() ? title : tr("{0} by {1}", title, c.get_meta("author")), kTitle);
   size_t lines = size_t(std::count(c.code.begin(), c.code.end(), '\n')) + 1;
-  print("code    " + std::to_string(c.code.size()) + " / " + std::to_string(cart::kMaxCodeBytes) + " bytes, " +
-            std::to_string(lines) + " lines",
+  print(tr("code    {0} / {1} bytes, {2} lines", std::to_string(c.code.size()), std::to_string(cart::kMaxCodeBytes),
+           std::to_string(lines)),
         kText);
   size_t packed = cart::pack(c).size();
   int pct = int(packed * 100 / cart::kPngCapacity);
-  print("packed  " + std::to_string(packed) + " bytes (" + std::to_string(pct) + "% of a png cart)",
+  print(tr("packed  {0} bytes ({1}% of a png cart)", std::to_string(packed), std::to_string(pct)),
         pct > 100 ? kError : kText);
   int sprites = 0;
   for (int n = 0; n < kSprites; ++n) {
@@ -246,7 +256,7 @@ void Shell::cmd_info() {
       for (int x = 0; x < 8 && !used; ++x) used = c.gfx[size_t(sy + y) * kSheetW + size_t(sx + x)] != 0;
     sprites += used;
   }
-  print("sprites " + std::to_string(sprites) + " / " + std::to_string(kSprites), kText);
+  print(tr("sprites {0} / {1}", std::to_string(sprites), std::to_string(kSprites)), kText);
 }
 
 void Shell::execute(const std::string& line) {
@@ -270,47 +280,73 @@ void Shell::execute(const std::string& line) {
   else if (cmd == "share") {
     std::string url = kPlayUrl + cart::base64url_encode(cart::pack(studio_.cart()));
     if (url.size() > kMaxShareUrl) {
-      print("this cart is too big for a link (" + std::to_string(url.size()) + " chars); export a png", kError);
+      print(tr("this cart is too big for a link ({0} chars); export a png", std::to_string(url.size())), kError);
     } else {
       studio_.set_clipboard(url);
-      print("link copied (" + std::to_string(url.size()) + " chars):", kGood);
+      print(tr("link copied ({0} chars):", std::to_string(url.size())), kGood);
       print(url, kDim);
     }
   } else if (cmd == "bundle") {
     if (studio_.runtime().empty()) {
-      print("bundling isn't available here", kError);
+      print(tr("bundling isn't available here"), kError);
     } else if (arg.empty()) {
-      print("bundle what? bundle mygame", kError);
+      print(tr("bundle what? bundle mygame"), kError);
     } else {
       fs::path out = dir_ / arg;
       bool app = fs::path(studio_.runtime()).extension() == ".app";
       if (app && out.extension() != ".app") out += ".app";
       if (!app && fs::path(studio_.runtime()).extension() == ".exe" && out.extension() != ".exe") out += ".exe";
       auto r = cart::bundle(studio_.runtime(), studio_.cart(), out.string());
-      if (r.ok) print("built " + out.filename().string() + ": share it, or upload it to itch.io", kGood);
+      if (r.ok) print(tr("built {0}: share it, or upload it to itch.io", out.filename().string()), kGood);
       else print(r.error, kError);
     }
   }
   else if (cmd == "run") studio_.play();
   else if (cmd == "new") {
     studio_.new_cart();
-    print("new cart", kGood);
+    print(tr("new cart"), kGood);
   } else if (cmd == "edit") studio_.select_editor(1);
   else if (cmd == "browse" || cmd == "splore") browse();
   else if (cmd == "cls") {
     text_.clear();
     colors_.clear();
   } else if (cmd == "reboot") boot();
+  else if (cmd == "lang") {
+    if (arg.empty()) {
+      for (const auto& [code, name] : ui::languages())
+        print("  " + code + "  " + name + (code == ui::language() ? "  *" : ""), code == ui::language() ? kGood : kText);
+    } else if (ui::set_language(arg)) {
+      studio_.settings_changed();
+      print(tr("language set"), kGood);
+    } else {
+      print(tr("no language {0}. try lang", arg), kError);
+    }
+  } else if (cmd == "theme") {
+    if (arg == "contrast" || arg == "default") {
+      studio_.set_high_contrast(arg == "contrast");
+      studio_.settings_changed();
+      print(tr("theme set"), kGood);
+    } else {
+      print(tr("themes: default, contrast"), kText);
+    }
+  } else if (cmd == "scale") {
+    int n = std::atoi(arg.c_str());
+    if (n >= 1 && n <= 8 && studio_.set_window_scale(n)) print(tr("window scale {0}", std::to_string(n)), kGood);
+    else print(tr("scale takes a number from 1 to 8"), kError);
+  } else if (cmd == "keys") {
+    keys_step_ = 0;
+    print(tr("rebinding player 1. press a key for each button, esc keeps it"), kTitle);
+  }
   else if (cmd == "title" || cmd == "author") {
     if (arg.empty()) {
-      print(studio_.cart().get_meta(cmd, "(none)"), kText);
+      print(studio_.cart().get_meta(cmd, tr("(none)")), kText);
     } else {
       studio_.cart().set_meta(cmd, arg);
       studio_.mark_dirty();
-      print(cmd + " set", kGood);
+      print(tr(cmd == "title" ? "title set" : "author set"), kGood);
     }
   } else {
-    print("unknown command " + cmd + ". try help", kError);
+    print(tr("unknown command {0}. try help", cmd), kError);
   }
 }
 
@@ -389,10 +425,16 @@ bool Shell::update_boot(ui::Ui& ui) {
       int chars = (f - 90) * 2;
       int y = 82;
       for (const char* line : kBootLines) {
-        std::string s(line);
-        int n = std::clamp(chars, 0, int(s.size()));
-        g.print(s.substr(0, size_t(n)), kScreenW / 2 - gfx::Gfx::text_width(s) / 2, y, line == kBootLines[2] ? kDim : kText);
-        chars -= int(s.size());
+        std::string s = line == kBootLines[2] ? tr(line) : std::string(line);
+        int n = std::clamp(chars, 0, int(gfx::glyphs(s).size()));
+        // Cut on whole glyphs so a half-typed multi-byte letter never shows.
+        size_t bytes = 0;
+        for (int k = 0; k < n && bytes < s.size(); ++k) {
+          size_t len = (uint8_t(s[bytes]) & 0xE0) == 0xC0 ? 2 : 1;
+          bytes += len;
+        }
+        g.print(s.substr(0, bytes), kScreenW / 2 - gfx::Gfx::text_width(s) / 2, y, line == kBootLines[2] ? kDim : kText);
+        chars -= int(gfx::glyphs(s).size());
         y += 8;
       }
     }
@@ -401,7 +443,7 @@ bool Shell::update_boot(ui::Ui& ui) {
   if (skip || f >= kBootFrames) {
     for (int ch = 0; ch < 3; ++ch) audio.note(ch, -1, 0, 0);
     boot_frame_ = -1;
-    for (const char* l : kBootLines) print(l, l == kBootLines[2] ? kDim : kText);
+    print_banner();
     return false;
   }
   return true;
@@ -475,7 +517,7 @@ void Shell::update_browser(ui::Ui& ui, const ui::Rect& body) {
   ui.text(head, 4, body.y + 3, th.text);
   std::string pg = std::to_string(page + 1) + "/" + std::to_string(pages);
   ui.text(pg, kScreenW - 4 - gfx::Gfx::text_width(pg), body.y + 3, th.dim);
-  if (n == 0) ui.text("no carts in this folder", 4, body.y + 20, th.dim);
+  if (n == 0) ui.text(tr("no carts in this folder"), 4, body.y + 20, th.dim);
 
   for (int i = 0; i < per_page; ++i) {
     int idx = page * per_page + i;
@@ -513,14 +555,48 @@ void Shell::update_browser(ui::Ui& ui, const ui::Rect& body) {
   }
 }
 
+void Shell::update_keys(ui::Ui& ui) {
+  // One button at a time: the first key pressed becomes its binding.
+  auto& in = ui.in();
+  auto& km = in.keymap();
+  int b = keys_step_;
+  if (in.keyp(input::key_from_name("escape"))) {
+    ++keys_step_;
+  } else {
+    for (int k = 1; k < input::kKeyCount; ++k) {
+      if (!in.keyp(input::Key(k))) continue;
+      km.clear(0, b);
+      km.bind(0, b, input::Key(k));
+      print("  " + std::string(input::button_name(b)) + " = " + std::string(input::key_name(input::Key(k))), kText);
+      ++keys_step_;
+      break;
+    }
+  }
+  if (keys_step_ >= input::kButtonCount) {
+    keys_step_ = -1;
+    studio_.settings_changed();
+    print(tr("controls saved"), kGood);
+  } else if (keys_step_ != b) {
+    print(tr("press a key for {0}", std::string(input::button_name(keys_step_))), kDim);
+  }
+}
+
 void Shell::update(ui::Ui& ui, const ui::Rect& body) {
+  if (keys_step_ >= 0) {
+    if (keys_step_ == 0 && !keys_prompted_) {
+      print(tr("press a key for {0}", std::string(input::button_name(0))), kDim);
+      keys_prompted_ = true;
+    }
+    update_keys(ui);
+    if (keys_step_ < 0) keys_prompted_ = false;
+  }
   if (browsing_) {
     update_browser(ui, body);
     return;
   }
   auto& in = ui.in();
   const auto& th = ui.theme();
-  if (!in.ctrl() && !in.alt()) {
+  if (keys_step_ < 0 && !in.ctrl() && !in.alt()) {
     for (char c : in.text())
       if (uint8_t(c) >= 32 && uint8_t(c) < 127) input_ += c;
     if (in.keyr(key_from_name("backspace")) && !input_.empty()) input_.pop_back();
@@ -563,7 +639,8 @@ void Shell::update(ui::Ui& ui, const ui::Rect& body) {
 }
 
 std::string Shell::status() const {
-  if (browsing_) return "arrows choose  enter plays  e edits  esc closes";
+  if (keys_step_ >= 0) return tr("press a key, or esc to keep the current one");
+  if (browsing_) return tr("arrows choose  enter plays  e edits  esc closes");
   return dir_.string();
 }
 
