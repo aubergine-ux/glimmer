@@ -21,3 +21,5 @@ target_include_directories(glimmer_stb SYSTEM INTERFACE ${CMAKE_CURRENT_SOURCE_D
 
 add_library(glimmer_doctest INTERFACE)
 target_include_directories(glimmer_doctest SYSTEM INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/doctest)
+# doctest's own std forward declarations break with recent MSVC standard libraries.
+target_compile_definitions(glimmer_doctest INTERFACE DOCTEST_CONFIG_USE_STD_HEADERS)
