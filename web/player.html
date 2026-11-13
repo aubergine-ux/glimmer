@@ -139,7 +139,7 @@
       });
       window.addEventListener('pointerdown', function () { canvas.focus(); });
       window.addEventListener('keydown', function (e) {
-        if ((e.ctrlKey || e.metaKey) && /^[a-z0-9]$/i.test(e.key)) e.preventDefault();
+        if ((e.ctrlKey || e.metaKey) && /^[a-z0-9]$/i.test(e.key) && !/^[cvx]$/i.test(e.key)) e.preventDefault();
         if (e.key === 'Tab' || e.key === 'F6' || e.key === 'F8') e.preventDefault();
       }, true);
     })();

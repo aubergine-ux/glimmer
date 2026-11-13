@@ -4,6 +4,10 @@
 #include <cmath>
 #include <filesystem>
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
+
 #include "app/tools.hpp"
 #include "ui/i18n.hpp"
 #include "cart/bundle.hpp"
@@ -41,20 +45,38 @@ std::string read_text(const std::string& path) {
   return std::string(bytes.begin(), bytes.end());
 }
 
+std::string get_clipboard() {
+#ifdef __EMSCRIPTEN__
+  // SDL has no system clipboard on the web; the page records paste events.
+  const char* text = emscripten_run_script_string("window.glimmerClipboard || ''");
+  return text ? text : "";
+#else
+  std::string text;
+  if (char* c = SDL_GetClipboardText()) {
+    text = c;
+    SDL_free(c);
+  }
+  return text;
+#endif
+}
+
+void set_clipboard(const std::string& text) {
+#ifdef __EMSCRIPTEN__
+  EM_ASM(
+      {
+        var s = UTF8ToString($0);
+        window.glimmerClipboard = s;
+        if (navigator.clipboard) navigator.clipboard.writeText(s).catch(function() {});
+      },
+      text.c_str());
+#else
+  SDL_SetClipboardText(text.c_str());
+#endif
+}
 
 }  // namespace
 
-App::App()
-    : studio_(console_, {[] {
-                           std::string text;
-                           if (char* c = SDL_GetClipboardText()) {
-                             text = c;
-                             SDL_free(c);
-                           }
-                           return text;
-                         },
-                         [](const std::string& text) { SDL_SetClipboardText(text.c_str()); },
-                         {}}) {}
+App::App() : studio_(console_, {get_clipboard, set_clipboard, {}}) {}
 
 App::~App() {
   save_persist();
