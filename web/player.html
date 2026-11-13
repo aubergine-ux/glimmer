@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <title>{{TITLE}}</title>
+  <script>window.GLIMMER_CART = "{{CART}}";</script>
+  <style>
+    :root { color-scheme: dark; --bg: #0b0a12; --pad: #1f1a33; --key: #3a2f5b; --key-hi: #b03f86; --text: #f2e9ff; }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); overflow: hidden;
+      font: 12px/1.3 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; touch-action: none; user-select: none; }
+    #app { position: fixed; inset: 0; display: flex; flex-direction: column; }
+    #stage { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; position: relative; }
+    canvas { width: 100%; height: 100%; display: block; outline: none; image-rendering: pixelated; }
+    #status { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+      pointer-events: none; letter-spacing: .1em; color: #8a8fa8; }
+    #touch { display: none; height: 38vh; max-height: 260px; padding: 12px 18px env(safe-area-inset-bottom);
+      align-items: center; justify-content: space-between; background: var(--pad); }
+    body.touch #touch { display: flex; }
+    @media (orientation: landscape) {
+      body.touch #touch { position: absolute; inset: auto 0 0 0; height: 100%; max-height: none; background: none;
+        pointer-events: none; padding: 0 24px; }
+      body.touch #touch > * { pointer-events: auto; opacity: .55; }
+    }
+    #dpad { position: relative; width: 150px; height: 150px; border-radius: 50%; background: var(--key); }
+    #dpad::before, #dpad::after { content: ""; position: absolute; background: var(--pad); border-radius: 6px; }
+    #dpad::before { left: 50px; top: 12px; width: 50px; height: 126px; }
+    #dpad::after { top: 50px; left: 12px; height: 50px; width: 126px; }
+    #dpad i { position: absolute; z-index: 1; width: 0; height: 0; border: 9px solid transparent; }
+    #dpad .u { left: 66px; top: 22px; border-bottom-color: var(--text); }
+    #dpad .d { left: 66px; bottom: 22px; border-top-color: var(--text); }
+    #dpad .l { top: 66px; left: 22px; border-right-color: var(--text); }
+    #dpad .r { top: 66px; right: 22px; border-left-color: var(--text); }
+    #buttons { display: grid; grid-template-columns: 64px 64px; grid-template-rows: 64px 64px; gap: 10px;
+      transform: rotate(-20deg); }
+    #buttons button { border: 0; border-radius: 50%; background: var(--key); color: var(--text);
+      font: bold 18px ui-monospace, monospace; touch-action: none; }
+    #buttons button.on { background: var(--key-hi); }
+    #full { position: absolute; top: 8px; right: 8px; z-index: 2; border: 0; border-radius: 6px; padding: 6px 9px;
+      background: #1f1a33cc; color: var(--text); font: inherit; display: none; }
+    body.touch #full { display: block; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div id="stage">
+      <canvas id="canvas" tabindex="-1"></canvas>
+      <div id="status">loading…</div>
+      <button id="full" aria-label="fullscreen">⛶</button>
+    </div>
+    <div id="touch">
+      <div id="dpad" aria-label="d-pad"><i class="u"></i><i class="d"></i><i class="l"></i><i class="r"></i></div>
+      <div id="buttons">
+        <button data-b="7" aria-label="Y">Y</button>
+        <button data-b="5" aria-label="B">B</button>
+        <button data-b="6" aria-label="X">X</button>
+        <button data-b="4" aria-label="A">A</button>
+      </div>
+    </div>
+  </div>
+  <script>
+    (function () {
+      var params = new URLSearchParams(location.search);
+      var hash = new URLSearchParams(location.hash.slice(1));
+      var statusEl = document.getElementById('status');
+      var canvas = document.getElementById('canvas');
+      if (params.get('touch') === '1' || (params.get('touch') !== '0' && matchMedia('(pointer: coarse)').matches)) {
+        document.body.classList.add('touch');
+      }
+
+      function fromBase64Url(s) {
+        s = s.replace(/-/g, '+').replace(/_/g, '/');
+        while (s.length % 4) s += '=';
+        var bin = atob(s), out = new Uint8Array(bin.length);
+        for (var i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+        return out;
+      }
+
+      // Where the cart comes from: inlined by an export, a share link, a demo name, or a URL.
+      var inline = window.GLIMMER_CART || '';
+      var share = hash.get('c');
+      var name = (params.get('cart') || '').replace(/[^a-z0-9_-]/gi, '');
+      var url = params.get('url');
+      var args = ['--player', '/game.bin'];
+      if (!inline && !share && !url && name) args = ['--player', '/carts/' + name + '.glim'];
+
+      window.Module = {
+        canvas: canvas,
+        arguments: args,
+        setStatus: function (s) { statusEl.textContent = s ? s.toLowerCase() : ''; },
+        onRuntimeInitialized: function () { statusEl.textContent = ''; canvas.focus(); },
+        preRun: [function () {
+          if (inline || share) {
+            Module.FS.writeFile('/game.bin', fromBase64Url(inline || share));
+          } else if (url) {
+            Module.addRunDependency('cart');
+            fetch(url).then(function (r) {
+              if (!r.ok) throw new Error(r.status);
+              return r.arrayBuffer();
+            }).then(function (buf) {
+              Module.FS.writeFile('/game.bin', new Uint8Array(buf));
+              Module.removeRunDependency('cart');
+            }).catch(function (e) { statusEl.textContent = 'could not load the cart (' + e.message + ')'; });
+          } else if (!name) {
+            statusEl.textContent = 'no cart given';
+          }
+        }],
+      };
+
+      // Touch: the d-pad reads the finger's direction so it can slide between arrows.
+      function press(b, down) {
+        if (window.Module && Module.ccall) Module.ccall('glim_touch', null, ['number', 'number'], [b, down ? 1 : 0]);
+      }
+      var dpad = document.getElementById('dpad'), held = [false, false, false, false];
+      function dpadSet(e) {
+        var r = dpad.getBoundingClientRect();
+        var dx = e ? e.clientX - (r.left + r.width / 2) : 0, dy = e ? e.clientY - (r.top + r.height / 2) : 0;
+        var dead = r.width * 0.12;
+        var want = [dx < -dead, dx > dead, dy < -dead, dy > dead];
+        for (var i = 0; i < 4; i++) if (want[i] !== held[i]) { held[i] = want[i]; press(i, want[i]); }
+      }
+      dpad.addEventListener('pointerdown', function (e) { dpad.setPointerCapture(e.pointerId); dpadSet(e); });
+      dpad.addEventListener('pointermove', function (e) { if (e.buttons || e.pointerType === 'touch') dpadSet(e); });
+      ['pointerup', 'pointercancel'].forEach(function (t) { dpad.addEventListener(t, function () { dpadSet(null); }); });
+      Array.prototype.forEach.call(document.querySelectorAll('#buttons button'), function (btn) {
+        var b = +btn.dataset.b;
+        btn.addEventListener('pointerdown', function (e) { btn.setPointerCapture(e.pointerId); btn.classList.add('on'); press(b, true); });
+        ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (t) {
+          btn.addEventListener(t, function () { if (btn.classList.contains('on')) { btn.classList.remove('on'); press(b, false); } });
+        });
+      });
+      document.getElementById('full').addEventListener('click', function () {
+        var el = document.documentElement;
+        if (document.fullscreenElement) document.exitFullscreen();
+        else if (el.requestFullscreen) el.requestFullscreen();
+      });
+      window.addEventListener('pointerdown', function () { canvas.focus(); });
+      window.addEventListener('keydown', function (e) {
+        if ((e.ctrlKey || e.metaKey) && /^[a-z0-9]$/i.test(e.key)) e.preventDefault();
+        if (e.key === 'Tab' || e.key === 'F6' || e.key === 'F8') e.preventDefault();
+      }, true);
+    })();
+  </script>
+  {{RUNTIME}}
+</body>
+</html>
