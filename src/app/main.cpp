@@ -6,6 +6,10 @@
 #include <string>
 #include <string_view>
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
+
 #include "app/tools.hpp"
 #include "platform/app.hpp"
 
@@ -78,6 +82,15 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[]) {
     }
   }
   if (tool) return glim::tools::run_headless(headless) ? SDL_APP_SUCCESS : SDL_APP_FAILURE;
+
+#ifdef __EMSCRIPTEN__
+  // On the web the cart comes from the page URL: ?cart=orbit loads /carts/orbit.glim.
+  if (opts.cart_path.empty()) {
+    const char* name = emscripten_run_script_string(
+        "(new URLSearchParams(location.search).get('cart') || '').replace(/[^a-z0-9_-]/gi, '')");
+    if (name && *name) opts.cart_path = std::string("/carts/") + name + ".glim";
+  }
+#endif
 
   auto* app = new glim::platform::App();
   *appstate = app;
