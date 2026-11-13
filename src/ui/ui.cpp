@@ -212,11 +212,20 @@ bool Ui::spinner(int x, int y, std::string_view label, int& value, int lo, int h
 bool Ui::text_field(const Rect& r, std::string& value, bool focused) {
   fill(r, theme_.bg);
   if (focused) {
+    using input::key_from_name;
     if (text_cursor_ > value.size()) text_cursor_ = value.size();
+    if (in_.ctrl() && in_.keyp(key_from_name("a"))) text_all_ = true;
+    bool edits = !in_.text().empty() || in_.keyr(key_from_name("backspace")) || in_.keyr(key_from_name("delete"));
+    if (text_all_ && edits) {
+      value.clear();
+      text_cursor_ = 0;
+      text_all_ = false;
+      if (in_.text().empty()) return false;
+    }
+    if (text_all_ && (in_.keyp(key_from_name("left")) || in_.keyp(key_from_name("right")))) text_all_ = false;
     for (char ch : in_.text()) {
       if (uint8_t(ch) >= 32 && uint8_t(ch) < 127) value.insert(text_cursor_++, 1, ch);
     }
-    using input::key_from_name;
     if (in_.keyr(key_from_name("backspace")) && text_cursor_ > 0) value.erase(--text_cursor_, 1);
     if (in_.keyr(key_from_name("delete")) && text_cursor_ < value.size()) value.erase(text_cursor_, 1);
     if (in_.keyr(key_from_name("left")) && text_cursor_ > 0) --text_cursor_;
@@ -228,6 +237,8 @@ bool Ui::text_field(const Rect& r, std::string& value, bool focused) {
   size_t first = 0;
   if (focused && text_cursor_ > size_t(max_chars)) first = text_cursor_ - max_chars;
   g_.clip(r.x, r.y, r.w, r.h);
+  if (focused && text_all_ && !value.empty())
+    fill({r.x + 1, r.y + 1, std::min(r.w - 2, int(value.size()) * gfx::kCharW + 2), r.h - 2}, theme_.select);
   text(std::string_view(value).substr(first), r.x + 2, r.y + (r.h - gfx::kGlyphH) / 2, theme_.text);
   if (focused && (frame_ / (kCursorBlink / 2)) % 2 == 0) {
     int cx = r.x + 1 + int(text_cursor_ - first) * gfx::kCharW;

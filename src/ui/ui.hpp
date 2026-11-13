@@ -97,6 +97,8 @@ class Ui {
   bool spinner(int x, int y, std::string_view label, int& value, int lo, int hi, std::string_view tip = {});
   // Single-line text field; returns true when Enter is pressed while focused.
   bool text_field(const Rect& r, std::string& value, bool focused);
+  // The next edit in a focused text field replaces its whole contents.
+  void select_all_text() { text_all_ = true; }
   bool palette(int x, int y, int cell, int& color, int columns = 8);
 
   void tooltip(std::string_view tip);
@@ -124,6 +126,7 @@ class Ui {
   int still_frames_ = 0;
   std::string tip_;
   size_t text_cursor_ = std::string::npos;
+  bool text_all_ = false;
 };
 
 }  // namespace glim::ui
