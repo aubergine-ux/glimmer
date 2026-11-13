@@ -65,6 +65,10 @@ animation; any key skips it.
 | `browse` | Pick a cart from a grid of covers |
 | `info` | Code size, packed size against the PNG limit, sprites used |
 | `title <text>`, `author <text>` | Set the cart's metadata |
+| `lang [code]` | List the languages, or switch: `lang sq` for Albanian, `lang en` for English |
+| `theme [name]` | `contrast` for the high-contrast editor theme, `default` to switch back |
+| `scale <n>` | Set the window to n times the console's size (1–8) |
+| `keys` | Rebind player one's controls: press a key for each button in turn |
 | `edit`, `cls`, `reboot`, `help` | |
 
 <kbd>Tab</kbd> completes file names, and <kbd>↑</kbd> and <kbd>↓</kbd> step
@@ -82,6 +86,20 @@ through earlier commands.
 In the **cart browser**, use the arrow keys to choose, <kbd>Enter</kbd> to
 play and <kbd>E</kbd> to edit. Carts without a saved label get a cover from a
 short run.
+
+## Accessibility and languages
+
+Settings made from the shell are saved and come back next time:
+
+- **High-contrast theme:** `theme contrast` switches the editors to white on
+  black with a yellow accent.
+- **Window scale:** `scale <n>` sets the window size. The console still scales
+  to whatever size you drag the window to, and <kbd>F11</kbd> goes fullscreen.
+- **Controls:** `keys` rebinds player one's ten buttons. The bindings for all
+  four players live in `keys.cfg` in the user data folder, as plain text you
+  can edit. Gamepads always work alongside the keyboard.
+- **Language:** `lang` switches the console UI. English and Albanian ship with
+  Glimmer, and the first start follows your system language.
 
 ## Code
 

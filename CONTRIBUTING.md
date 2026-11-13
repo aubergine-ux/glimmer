@@ -68,6 +68,25 @@ on the files you touch is appreciated.
 - Update [CHANGELOG.md](CHANGELOG.md) under *Unreleased* for anything a player
   or cart author would notice.
 
+## Translating
+
+The console UI is written in English and looked up through `tr()`. A
+translation is a plain text file in `lang/`, named after the language code
+(`lang/sq.txt` is Albanian). The rules:
+
+- **Format:** each line maps English to the translation:
+  `english text = translated text`. Lines starting with `#` are comments, and
+  `language = Name` gives the language's own name.
+- **Placeholders:** `{0}`, `{1}`… stand for values filled in at runtime.
+  Keep them, in any order.
+- **Characters:** the font covers ASCII plus the Albanian `ë ç Ë Ç`. A language
+  that needs other letters needs glyphs in `src/gfx/font.cpp` first.
+
+`tools/extract_strings.py lang/xx.txt` lists every string your file doesn't
+translate yet, ready to paste in. The files are compiled into Glimmer. Players
+can also drop a file into `lang/` in the user data folder to try a
+translation without rebuilding.
+
 ## Demo carts
 
 New demo carts go in `carts/`. A good demo:
