@@ -5,6 +5,7 @@
 
 #include "cart/cart.hpp"
 #include "cart/image.hpp"
+#include "platform/crt.hpp"
 #include "runtime/console.hpp"
 
 namespace glim::tools {
@@ -67,9 +68,18 @@ bool run_headless(const Headless& opts) {
   }
 
   if (!opts.screenshot.empty()) {
-    cart::Image img(kScreenW, kScreenH);
     const uint32_t* px = con.display();
-    for (int i = 0; i < kScreenW * kScreenH; ++i) {
+    int w = kScreenW, h = kScreenH;
+    std::vector<uint32_t> filtered;
+    if (opts.crt) {
+      filtered.resize(size_t(platform::Crt::kW) * platform::Crt::kH);
+      platform::Crt().apply(px, filtered.data());
+      px = filtered.data();
+      w = platform::Crt::kW;
+      h = platform::Crt::kH;
+    }
+    cart::Image img(w, h);
+    for (int i = 0; i < w * h; ++i) {
       img.rgba[i * 4 + 0] = uint8_t(px[i] >> 16);
       img.rgba[i * 4 + 1] = uint8_t(px[i] >> 8);
       img.rgba[i * 4 + 2] = uint8_t(px[i]);

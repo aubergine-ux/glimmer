@@ -2,7 +2,6 @@
 #include <SDL3/SDL_main.h>
 
 #include <cstdio>
-#include <cstring>
 #include <string>
 #include <string_view>
 
@@ -24,7 +23,7 @@ void usage() {
       "  --export IN OUT         convert a cart; OUT's extension picks .glim or .png\n"
       "  --headless CART         run without a window, exit 1 on a runtime error\n"
       "      --frames N          frames to run (default 120)\n"
-      "      --screenshot OUT    save the final frame as a PNG\n"
+      "      --screenshot OUT    save the final frame as a PNG (4x with --crt)\n"
       "      --press SPEC        hold buttons, e.g. a@30-60 or right@0-90 (repeatable)\n"
       "  --version               print the version\n");
 }
@@ -48,6 +47,7 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[]) {
       opts.fullscreen = true;
     } else if (a == "--crt") {
       opts.crt = true;
+      headless.crt = true;
     } else if (a == "--scale") {
       opts.scale = std::atoi(next());
     } else if (a == "--export") {
