@@ -1,0 +1,263 @@
+glimmer cart 1
+[meta]
+title = crates
+author = glimmer
+spec = 1
+[code]
+-- crates.glim: push every crate onto a target.
+-- arrows move, z undoes a move, x restarts the level.
+-- shows: levels written as text, an undo stack, smooth movement,
+-- and saving progress with dset/dget.
+\
+-- each level is drawn with characters:
+--   # wall   $ crate   . target   @ you   * crate on a target
+levels = {
+  [[
+#######
+#@ $ .#
+#######]],
+  [[
+#########
+#@      #
+# $ $   #
+#    .. #
+#########]],
+  [[
+#######
+#     #
+# $ $ #
+#  #  #
+# .@. #
+#######]],
+  [[
+########
+#  #   #
+# $  $ #
+#  ##  #
+#.@  . #
+########]],
+  [[
+#########
+#   #   #
+# $   $ #
+#   #   #
+## .#. ##
+ #  @  #
+ #######]],
+  [[
+##########
+#    @   #
+# $$   # #
+#  #  $  #
+#. .  .  #
+##########]]
+}
+-- the fewest moves each level can be solved in
+par = {3, 14, 14, 18, 23, 26}
+\
+tile = 16          -- sprites are 8x8, drawn twice as big
+anim_frames = 5    -- frames a move takes to slide
+\
+function _init()
+  -- slot 0 remembers how far you've got; slots 1-6 your best scores
+  unlocked = max(1, dget(0))
+  load_level(unlocked)
+  music(0)
+end
+\
+function load_level(n)
+  level = n
+  walls, targets, crates = {}, {}, {}
+  local y = 0
+  for row in all(split(levels[n], "\n", false)) do
+    for x = 1, #row do
+      local ch = sub(row, x, x)
+      local cx = x - 1
+      if ch == "#" then walls[cx .. "," .. y] = true end
+      if ch == "." or ch == "*" or ch == "+" then add(targets, {x = cx, y = y}) end
+      if ch == "$" or ch == "*" then add(crates, {x = cx, y = y, fx = cx, fy = y}) end
+      if ch == "@" or ch == "+" then player = {x = cx, y = y, fx = cx, fy = y, flip = false} end
+    end
+    width = max(width or 0, #row)
+    y = y + 1
+  end
+  height = y
+  floor = reachable()
+  history, moves, anim, solved = {}, 0, 0, false
+  -- center the level on screen
+  ox = 128 - width * tile / 2
+  oy = 76 - height * tile / 2
+end
+\
+-- flood fill from the player: only these cells get a floor tile, so the
+-- outside of the level stays dark
+function reachable()
+  local seen, todo = {}, {{player.x, player.y}}
+  while #todo > 0 do
+    local c = deli(todo)
+    local key = c[1] .. "," .. c[2]
+    if not seen[key] and not walls[key] then
+      seen[key] = true
+      add(todo, {c[1] + 1, c[2]})
+      add(todo, {c[1] - 1, c[2]})
+      add(todo, {c[1], c[2] + 1})
+      add(todo, {c[1], c[2] - 1})
+    end
+  end
+  return seen
+end
+\
+function crate_at(x, y)
+  for c in all(crates) do
+    if c.x == x and c.y == y then return c end
+  end
+end
+\
+function on_target(x, y)
+  for t in all(targets) do
+    if t.x == x and t.y == y then return true end
+  end
+  return false
+end
+\
+-- remember where everything was, so z can step back
+function snapshot()
+  local state = {px = player.x, py = player.y, moves = moves, crates = {}}
+  for c in all(crates) do add(state.crates, {x = c.x, y = c.y}) end
+  add(history, state)
+end
+\
+function try_move(dx, dy)
+  local nx, ny = player.x + dx, player.y + dy
+  if walls[nx .. "," .. ny] then return end
+  local c = crate_at(nx, ny)
+  if c then
+    -- a crate moves only if the cell behind it is free
+    local bx, by = nx + dx, ny + dy
+    if walls[bx .. "," .. by] or crate_at(bx, by) then return end
+    snapshot()
+    c.fx, c.fy = c.x, c.y
+    c.x, c.y = bx, by
+    sfx(on_target(bx, by) and 2 or 1)
+  else
+    snapshot()
+    sfx(0)
+  end
+  player.fx, player.fy = player.x, player.y
+  player.x, player.y = nx, ny
+  if dx ~= 0 then player.flip = dx < 0 end
+  moves = moves + 1
+  anim = anim_frames
+end
+\
+function undo()
+  local state = deli(history)
+  if not state then return end
+  player.x, player.y, player.fx, player.fy = state.px, state.py, state.px, state.py
+  moves = state.moves
+  for i, c in ipairs(crates) do
+    c.x, c.y = state.crates[i].x, state.crates[i].y
+    c.fx, c.fy = c.x, c.y
+  end
+  sfx(4)
+end
+\
+function check_solved()
+  for c in all(crates) do
+    if not on_target(c.x, c.y) then return end
+  end
+  solved = true
+  sfx(3)
+  local best = dget(level)
+  if best == 0 or moves < best then dset(level, moves) end
+  if level == unlocked and level < #levels then
+    unlocked = level + 1
+    dset(0, unlocked)
+  end
+end
+\
+function _update()
+  if anim > 0 then
+    anim = anim - 1
+    if anim == 0 and not solved then check_solved() end
+    return
+  end
+  if solved then
+    if btnp("a") then load_level(level % #levels + 1) end
+    return
+  end
+  if btnp("left") then try_move(-1, 0)
+  elseif btnp("right") then try_move(1, 0)
+  elseif btnp("up") then try_move(0, -1)
+  elseif btnp("down") then try_move(0, 1)
+  elseif btnp("a") then undo()
+  elseif btnp("b") then load_level(level)
+  elseif btnp("l") and level > 1 then load_level(level - 1)
+  elseif btnp("r") and level < unlocked then load_level(level + 1)
+  end
+end
+\
+-- slide from the old cell (fx, fy) to the new one while a move animates
+function screen_pos(o)
+  local k = anim / anim_frames
+  return ox + lerp(o.x, o.fx, k) * tile, oy + lerp(o.y, o.fy, k) * tile
+end
+\
+function big_spr(n, x, y, flip)
+  sspr(n % 16 * 8, flr(n / 16) * 8, 8, 8, x, y, tile, tile, flip)
+end
+\
+function _draw()
+  cls(1)
+  for y = 0, height - 1 do
+    for x = 0, width - 1 do
+      local key = x .. "," .. y
+      if walls[key] then big_spr(1, ox + x * tile, oy + y * tile)
+      elseif floor[key] then big_spr(2, ox + x * tile, oy + y * tile) end
+    end
+  end
+  for t in all(targets) do big_spr(3, ox + t.x * tile, oy + t.y * tile) end
+  for c in all(crates) do
+    local x, y = screen_pos(c)
+    big_spr(on_target(c.x, c.y) and anim == 0 and 5 or 4, x, y)
+  end
+  local px, py = screen_pos(player)
+  big_spr(anim > 0 and 7 or 6, px, py, player.flip)
+\
+  print("level " .. level .. "/" .. #levels, 4, 3, 5)
+  local info = "moves " .. moves .. "  par " .. par[level]
+  print(info, 252 - textwidth(info), 3, 6)
+  if solved then
+    -- a panel under the board, so the finished level stays in view
+    rectfill(56, 112, 200, 138, 0)
+    rect(56, 112, 200, 138, moves <= par[level] and 17 or 5)
+    local msg = moves <= par[level] and "perfect!" or "solved in " .. moves .. " moves"
+    print(msg, 128 - textwidth(msg) / 2, 117, 17)
+    local next = level == #levels and "z: back to level 1" or "z: next level"
+    print(next, 128 - textwidth(next) / 2, 128, 6)
+  else
+    print("z undo  x restart  q/w change level", 4, 136, 7)
+  end
+end
+[gfx]
+00000000333233338888888800000000eeeeeeeejjjjjjjj00uuuu0000uuuu000000000000000000000000000000000000000000000000000000000000000000
+000000002221222288888818000gg000effffffejllllllj0uuuuuu00uuuuuu00000000000000000000000000000000000000000000000000000000000000000
+00000000111111118888888800g00g00efeffefejljlljlj0uv0v0u00uv0v0u00000000000000000000000000000000000000000000000000000000000000000
+0000000033333233888888880g0000g0effeeffejlljjllj0uvvvvu00uvvvvu00000000000000000000000000000000000000000000000000000000000000000
+0000000022222122888188880g0000g0effeeffejlljjllj00pppp0000pppp000000000000000000000000000000000000000000000000000000000000000000
+00000000111111118888888800g00g00efeffefejljlljlj0pppppp00pppppp00000000000000000000000000000000000000000000000000000000000000000
+000000003323333288888888000gg000effffffejllllllj00p00p000pp00pp00000000000000000000000000000000000000000000000000000000000000000
+00000000221222218188888800000000eeeeeeeejjjjjjjj00000000000000000000000000000000000000000000000000000000000000000000000000000000
+[sfx]
+010000001ea90000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+020000008c7888b0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+02000000a415abb1000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+030000009f15a315a615ab15afb1000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+010000005c0c58a8000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+1000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+1000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+1000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+180020008c0c8c0c930c930c910c910c8f0c8f0c8c0c8c0c930c930c910c910c8f0c8f0c8c0c8c0c930c930c910c910c8f0c8f0c8c0c8c0c930c930c910c910c8f0c8f0c
+0c002000a4890000a7890000ab890000a9890000a7890000a4890000a2890000a4890000a4890000a7890000ab890000a9890000a7890000a4890000a2890000a4890000
+[music]
+88894040
