@@ -28,6 +28,7 @@ struct Theme {
   uint8_t shadow;      // bevels and outlines
   uint8_t text;
   uint8_t dim;         // secondary text
+  uint8_t subtle;      // tertiary text: line numbers, group labels
   uint8_t accent;      // selected controls, the top bar
   uint8_t accent_text; // text on accent
   uint8_t select;      // text selection and marquees

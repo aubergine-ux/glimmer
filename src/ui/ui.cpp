@@ -22,6 +22,7 @@ Theme default_theme() {
   t.shadow = 0;
   t.text = 5;
   t.dim = 6;
+  t.subtle = 3;
   t.accent = 29;
   t.accent_text = 5;
   t.select = 4;
@@ -40,6 +41,7 @@ Theme high_contrast_theme() {
   t.shadow = 31;
   t.text = 31;
   t.dim = 18;
+  t.subtle = 6;
   t.accent = 17;
   t.accent_text = 0;
   t.select = 25;

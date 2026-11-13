@@ -875,7 +875,7 @@ void CodeEditor::draw_text(ui::Ui& ui, const ui::Rect& area, int gutter, int row
     else if (l == cur_line && !has_selection()) ui.fill({area.x + gutter - 1, y, area.w - gutter + 1, gfx::kCharH}, th.panel);
 
     std::string num = std::to_string(l + 1);
-    g.print(num, area.x + gutter - 4 - int(num.size()) * gfx::kCharW, y, l == cur_line ? th.text : th.raised + 1);
+    g.print(num, area.x + gutter - 4 - int(num.size()) * gfx::kCharW, y, l == cur_line ? th.text : th.subtle);
     if (l == error_line_) g.print("!", area.x + 1, y, th.error);
     if (breakpoints_.count(l + 1)) g.circfill(area.x + 2, y + 2, 2, th.error);
     if (l == exec_line_) g.print("\x81", area.x + 1, y, 17);
@@ -1015,7 +1015,7 @@ void CodeEditor::draw_reference(ui::Ui& ui, const ui::Rect& body) {
   ui.text(tr("api reference"), box.x + 4, box.y + 3, th.accent_text);
   ui.text(tr("type to filter, enter inserts"), box.right() - 3 - gfx::Gfx::text_width(tr("type to filter, enter inserts")), box.y + 3, th.accent_text);
   ui.text_field({box.x + 3, box.y + 11, box.w - 6, 8}, ref_filter_, false);
-  if (ref_filter_.empty()) ui.text(tr("filter..."), box.x + 5, box.y + 13, th.raised + 1);
+  if (ref_filter_.empty()) ui.text(tr("filter..."), box.x + 5, box.y + 13, th.subtle);
 
   auto docs = api_docs();
   std::vector<int> shown;
@@ -1048,7 +1048,7 @@ void CodeEditor::draw_reference(ui::Ui& ui, const ui::Rect& body) {
         return;
       }
     }
-    if (d.group != last_group) ui.text(d.group, box.x + 4, y, th.raised + 1);
+    if (d.group != last_group) ui.text(d.group, box.x + 4, y, th.subtle);
     last_group = d.group;
     ui.text(d.name, box.x + 40, y, selected ? th.text : 25);
   }

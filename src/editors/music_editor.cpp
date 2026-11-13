@@ -232,7 +232,7 @@ void MusicEditor::draw_grid(ui::Ui& ui, const ui::Rect& r) {
     if (row == row_) g.rectfill(r.x, y, r.right(), y + kRowH - 1, th.panel);
     char num[4];
     std::snprintf(num, sizeof num, "%02d", row);
-    g.print(num, r.x + 1, y, row % 8 == 0 ? th.text : th.raised + 1);
+    g.print(num, r.x + 1, y, row % 8 == 0 ? th.text : th.subtle);
     for (int ch = 0; ch < kChannels; ++ch) {
       int x = kGridX + ch * kColW;
       auto st = audio.status(ch);
@@ -246,11 +246,11 @@ void MusicEditor::draw_grid(ui::Ui& ui, const ui::Rect& r) {
         continue;
       }
       int dim = on ? 0 : 1;
-      g.print(note_name(s.pitch), x + 1, y, dim ? th.raised + 1 : th.text);
+      g.print(note_name(s.pitch), x + 1, y, dim ? th.subtle : th.text);
       g.print(std::string(1, "0123456789abcdef"[s.wave]), x + 17, y, dim ? th.raised : wave_color(s.wave));
       g.print(std::to_string(s.volume), x + 25, y, dim ? th.raised : 17);
       char fx[2] = {kEffectGlyph[s.effect & 7], 0};
-      g.print(fx, x + 33, y, dim ? th.raised : (s.effect ? 25 : th.raised + 1));
+      g.print(fx, x + 33, y, dim ? th.raised : (s.effect ? 25 : th.subtle));
     }
   }
   for (int ch = 1; ch < kChannels; ++ch) g.line(kGridX + ch * kColW - 3, r.y, kGridX + ch * kColW - 3, r.bottom(), th.panel);

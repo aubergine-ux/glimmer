@@ -406,7 +406,7 @@ void SpriteEditor::draw_canvas(ui::Ui& ui, const ui::Rect& r) {
   }
   if (grid_ && scale_ >= 6) {
     for (int i = 1; i < B; ++i) {
-      int c8 = (i % 8 == 0) ? th.raised + 1 : th.raised;
+      int c8 = (i % 8 == 0) ? th.subtle : th.raised;
       if (i % 8 == 0 || scale_ >= 12) {
         g.fillp(i % 8 == 0 ? 0 : 0xaaaa);
         g.line(r.x + i * scale_, r.y, r.x + i * scale_, r.bottom(), c8);

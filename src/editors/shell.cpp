@@ -538,7 +538,7 @@ void Shell::update_browser(ui::Ui& ui, const ui::Rect& body) {
         ui.icon(ui::Icon::kFolder, x + kCardW / 2 - 4, y + kCardH / 2 - 4, th.dim);
       } else {
         for (int s = 0; s < 12; ++s) g.pset(x + (s * 37 + idx * 11) % kCardW, y + (s * 23 + idx * 7) % kCardH, 7);
-        ui.text_centered("?", card, th.raised + 1);
+        ui.text_centered("?", card, th.subtle);
       }
     }
     g.rect(x - 1, y - 1, x + kCardW, y + kCardH, sel ? 31 : th.shadow);
