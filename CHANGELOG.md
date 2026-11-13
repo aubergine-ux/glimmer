@@ -7,10 +7,14 @@ separately in [SPEC.md](SPEC.md).
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-11-13
+
 ### Fixed
 
 - **Web clipboard:** copy and paste in the web console now go through the system
   clipboard, so code and art can move between the browser and other apps.
+- **Logo:** the boot animation and README banner draw the logo with wider
+  letters, so the M no longer reads as an H.
 
 ## [1.0.0] - 2026-11-13
 
@@ -152,7 +156,8 @@ The core runtime: everything needed to run carts, without the built-in editors y
 - **Builds and CI:** WebAssembly build, and CI on Linux, macOS, Windows and
   WebAssembly.
 
-[Unreleased]: https://github.com/aubergine-ux/glimmer/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/aubergine-ux/glimmer/compare/v1.0.1...HEAD
+[1.0.1]: https://github.com/aubergine-ux/glimmer/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/aubergine-ux/glimmer/compare/v0.2.1...v1.0.0
 [0.2.1]: https://github.com/aubergine-ux/glimmer/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/aubergine-ux/glimmer/compare/v0.1.0...v0.2.0
