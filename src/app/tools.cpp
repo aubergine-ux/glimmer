@@ -4,6 +4,14 @@
 #include <cstdlib>
 #include <memory>
 
+#include <filesystem>
+
+#include <SDL3/SDL.h>
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
+#include "cart/bundle.hpp"
 #include "cart/cart.hpp"
 #include "cart/gif.hpp"
 #include "cart/image.hpp"
@@ -30,6 +38,42 @@ bool parse_press(const std::string& spec, Press& out) {
 }
 
 }  // namespace
+
+std::string self_path() {
+#if defined(_WIN32)
+  wchar_t buf[4096];
+  DWORD n = GetModuleFileNameW(nullptr, buf, 4096);
+  return n ? std::filesystem::path(std::wstring(buf, n)).string() : std::string();
+#elif defined(__APPLE__)
+  // SDL's base path is Contents/Resources inside the bundle.
+  if (const char* base = SDL_GetBasePath()) {
+    auto app = std::filesystem::path(base).parent_path().parent_path();
+    if (app.extension() == ".app") return app.string();
+  }
+  return {};
+#elif defined(__EMSCRIPTEN__)
+  return {};
+#else
+  std::error_code ec;
+  auto p = std::filesystem::read_symlink("/proc/self/exe", ec);
+  return ec ? std::string() : p.string();
+#endif
+}
+
+bool bundle_game(const std::string& cart_path, const std::string& out, const std::string& runtime) {
+  cart::Cart c;
+  auto r = cart::load_file(cart_path, c);
+  if (r.ok && out.empty()) r = {false, "missing --out"};
+  std::string rt = runtime.empty() ? self_path() : runtime;
+  if (r.ok && rt.empty()) r = {false, "can't find the runtime; pass --runtime"};
+  if (r.ok) r = cart::bundle(rt, c, out);
+  if (!r.ok) {
+    std::fprintf(stderr, "bundle failed: %s\n", r.error.c_str());
+    return false;
+  }
+  std::printf("built %s\n", out.c_str());
+  return true;
+}
 
 bool export_cart(const std::string& in, const std::string& out) {
   cart::Cart c;

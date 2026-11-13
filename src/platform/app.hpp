@@ -17,6 +17,7 @@ struct Options {
   std::string cart_path;
   bool fullscreen = false;
   bool crt = false;
+  bool player = false;
   int scale = 4;
 };
 
@@ -30,6 +31,8 @@ class App {
   bool init(const Options& opts);
   bool iterate();               // false once the app should quit
   bool handle(SDL_Event& e);    // false once the app should quit
+  // On-screen touch controls feed player one's buttons.
+  void touch(int button, bool down) { console_.input.set_pad_button(0, button, down); }
 
  private:
   void load_cart(const std::string& path, bool play);

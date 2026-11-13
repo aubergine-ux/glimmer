@@ -14,6 +14,7 @@
 #endif
 
 #include "app/tools.hpp"
+#include "cart/bundle.hpp"
 #include "platform/app.hpp"
 
 namespace {
@@ -29,6 +30,9 @@ void usage() {
       "\n"
       "tools:\n"
       "  --export IN OUT         convert a cart; OUT's extension picks .glim or .png\n"
+      "  --bundle CART --out GAME [--runtime EXE]\n"
+      "                          build a standalone game from a copy of the runtime\n"
+      "  --player                play the cart without the editors\n"
       "  --headless CART         run without a window, exit 1 on a runtime error\n"
       "      --frames N          frames to run (default 120)\n"
       "      --screenshot OUT    save the final frame as a PNG (4x with --crt)\n"
@@ -40,6 +44,17 @@ void usage() {
 }
 
 }  // namespace
+
+namespace {
+glim::platform::App* g_app = nullptr;
+}  // namespace
+
+#ifdef __EMSCRIPTEN__
+// Called by the web player's on-screen touch controls.
+extern "C" EMSCRIPTEN_KEEPALIVE void glim_touch(int button, int down) {
+  if (g_app) g_app->touch(button, down != 0);
+}
+#endif
 
 SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[]) {
 #ifdef _WIN32
@@ -69,6 +84,16 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[]) {
       headless.crt = true;
     } else if (a == "--scale") {
       opts.scale = std::atoi(next());
+    } else if (a == "--player") {
+      opts.player = true;
+    } else if (a == "--bundle") {
+      std::string cart = next(), out, runtime;
+      for (++i; i < argc; ++i) {
+        std::string_view b = argv[i];
+        if (b == "--out") out = next();
+        else if (b == "--runtime") runtime = next();
+      }
+      return glim::tools::bundle_game(cart, out, runtime) ? SDL_APP_SUCCESS : SDL_APP_FAILURE;
     } else if (a == "--export") {
       std::string in = next(), out = next();
       return glim::tools::export_cart(in, out) ? SDL_APP_SUCCESS : SDL_APP_FAILURE;
@@ -110,6 +135,7 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[]) {
 
   auto* app = new glim::platform::App();
   *appstate = app;
+  g_app = app;
   return app->init(opts) ? SDL_APP_CONTINUE : SDL_APP_FAILURE;
 }
 

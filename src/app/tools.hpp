@@ -16,6 +16,9 @@ struct Headless {
 };
 
 bool export_cart(const std::string& in, const std::string& out);
+// The path of this program: the .app bundle on macOS, otherwise the executable.
+std::string self_path();
+bool bundle_game(const std::string& cart, const std::string& out, const std::string& runtime);
 
 // Drives the editors from a script of user actions (click, drag, type, key,
 // shot, record...). Used to test the studio and to capture docs footage.

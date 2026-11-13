@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cstdio>
 
+#include "cart/bundle.hpp"
 #include "cart/cart.hpp"
 #include "editors/studio.hpp"
 #include "gfx/font.hpp"
@@ -19,6 +20,8 @@ constexpr int kMaxLines = 400;
 constexpr int kBootFrames = 170;
 constexpr int kCardW = 80, kCardH = 45, kCardsX = 3, kCardsY = 2;
 constexpr const char* kCartExts[] = {".glim", ".png", ".lua"};
+constexpr const char* kPlayUrl = "https://armd.one/glimmer/play/#c=";
+constexpr size_t kMaxShareUrl = 8000;  // what browsers and chat apps reliably accept
 
 bool is_cart(const fs::path& p) {
   std::string e = p.extension().string();
@@ -135,6 +138,8 @@ void Shell::cmd_help() {
       {"new", "start a fresh cart"},
       {"browse", "pick a cart by its cover"},
       {"info", "sizes and limits of this cart"},
+      {"share", "copy a link that plays this cart"},
+      {"bundle <name>", "build a standalone game"},
       {"title <text>", "name the cart (also author)"},
       {"edit", "jump to the code editor"},
       {"cls", "clear the screen"},
@@ -262,6 +267,30 @@ void Shell::execute(const std::string& line) {
   else if (cmd == "save") cmd_save(arg);
   else if (cmd == "export") cmd_export(arg);
   else if (cmd == "info") cmd_info();
+  else if (cmd == "share") {
+    std::string url = kPlayUrl + cart::base64url_encode(cart::pack(studio_.cart()));
+    if (url.size() > kMaxShareUrl) {
+      print("this cart is too big for a link (" + std::to_string(url.size()) + " chars); export a png", kError);
+    } else {
+      studio_.set_clipboard(url);
+      print("link copied (" + std::to_string(url.size()) + " chars):", kGood);
+      print(url, kDim);
+    }
+  } else if (cmd == "bundle") {
+    if (studio_.runtime().empty()) {
+      print("bundling isn't available here", kError);
+    } else if (arg.empty()) {
+      print("bundle what? bundle mygame", kError);
+    } else {
+      fs::path out = dir_ / arg;
+      bool app = fs::path(studio_.runtime()).extension() == ".app";
+      if (app && out.extension() != ".app") out += ".app";
+      if (!app && fs::path(studio_.runtime()).extension() == ".exe" && out.extension() != ".exe") out += ".exe";
+      auto r = cart::bundle(studio_.runtime(), studio_.cart(), out.string());
+      if (r.ok) print("built " + out.filename().string() + ": share it, or upload it to itch.io", kGood);
+      else print(r.error, kError);
+    }
+  }
   else if (cmd == "run") studio_.play();
   else if (cmd == "new") {
     studio_.new_cart();

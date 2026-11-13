@@ -4,6 +4,8 @@
 #include <cmath>
 #include <filesystem>
 
+#include "app/tools.hpp"
+#include "cart/bundle.hpp"
 #include "cart/image.hpp"
 #include "editors/shell.hpp"
 
@@ -108,9 +110,25 @@ bool App::init(const Options& opts) {
   console_.on_persist = [this] { persist_dirty_ = true; };
 
   studio_.shell().set_dir(carts_dir());
+  studio_.set_runtime(tools::self_path());
   if (opts.fullscreen) toggle_fullscreen();
-  if (opts.cart_path.empty()) new_cart();
-  else load_cart(opts.cart_path, true);
+
+  // A standalone game carries its cart inside the executable or app bundle.
+  cart::Cart bundled;
+  const char* base = SDL_GetBasePath();
+  if (opts.cart_path.empty() && cart::find_bundled(tools::self_path(), base ? base : "", bundled)) {
+    studio_.set_player_mode(true);
+    studio_.open(bundled, "");
+    studio_.play();
+    SDL_SetWindowTitle(window_, bundled.get_meta("title", "Glimmer").c_str());
+  } else if (opts.player && !opts.cart_path.empty()) {
+    studio_.set_player_mode(true);
+    load_cart(opts.cart_path, true);
+  } else if (opts.cart_path.empty()) {
+    new_cart();
+  } else {
+    load_cart(opts.cart_path, true);
+  }
   last_ns_ = SDL_GetTicksNS();
   return true;
 }
