@@ -20,6 +20,8 @@ GLIMMER = Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / "build" / "glimmer"
 
 # Demo carts shown in the README grid: (cart, frames to skip, frames to record, extra args).
 CARTS = [
+    ("sprout", 0, 240, ["--press", "right@10-200", "--press", "a@40-42", "--press", "a@100-102",
+                        "--press", "a@150-152"]),
     ("orbit", 30, 150, []),
     ("hello", 0, 180, ["--press", "right@0-45", "--press", "up@20-50", "--press", "a@60-62",
                        "--press", "left@70-150", "--press", "down@100-130", "--press", "a@140-142"]),
@@ -59,8 +61,11 @@ def button(tmp):
 
 
 def hero():
-    headless(ROOT / "carts" / "orbit.glim", "--frames", "420", "--record-from", "60",
-             "--record", str(ASSETS / "hero.gif"))
+    # Edits sprout in every editor and then plays it; see the script for the steps.
+    subprocess.run([str(GLIMMER), "--studio-script", str(ASSETS / "src" / "hero.script"),
+                    str(ROOT / "carts" / "sprout.glim")], check=True, cwd=ROOT)
+    for f in ASSETS.glob("hero-*.png"):
+        f.unlink()
 
 
 def carts(tmp):
