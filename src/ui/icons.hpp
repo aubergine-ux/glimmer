@@ -8,7 +8,7 @@ enum class Icon : uint8_t {
   kCode, kSprite, kMap, kSfx, kMusic,
   kPlay, kStop, kPencil, kFill, kLine, kRect, kCircle, kSelect, kPicker, kHand,
   kFlipH, kFlipV, kRotate, kUndo, kRedo, kEye, kEyeOff, kOnion, kLoop, kAutoTile,
-  kWave, kPiano, kSearch, kHelp, kPlus, kMinus, kClose, kSave, kGrid, kCursor,
+  kWave, kPiano, kSearch, kHelp, kPlus, kMinus, kClose, kSave, kGrid, kCursor, kTerminal, kFolder,
   kCount
 };
 
