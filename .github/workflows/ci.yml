@@ -52,8 +52,32 @@ jobs:
           [ -f build/glimmer.exe ] && exe=build/glimmer.exe
           [ -d build/glimmer.app ] && exe=build/glimmer.app/Contents/MacOS/glimmer
           for cart in carts/*.glim; do
-            "$exe" --headless "$cart" --frames 300
+            if ! "$exe" --headless "$cart" --frames 300; then
+              if command -v lldb >/dev/null; then
+                lldb --batch -o run -k "thread backtrace all" -- "$exe" --headless "$cart" --frames 300
+              fi
+              exit 1
+            fi
           done
+
+  sanitizers:
+    name: Sanitizers
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure
+        run: >
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DGLIMMER_BUILD_APP=OFF
+          -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer"
+          -DCMAKE_C_FLAGS="-fsanitize=address,undefined"
+          -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address,undefined"
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
 
   web:
     name: WebAssembly
