@@ -2,6 +2,7 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <memory>
 
 #include "cart/cart.hpp"
 #include "cart/gif.hpp"
@@ -35,7 +36,8 @@ constexpr int kLabelFrames = 180;
 // Carts without a label get one from a short headless run, so exported PNGs
 // show the game instead of a placeholder.
 void capture_label(cart::Cart& c) {
-  Console con;
+  auto console = std::make_unique<Console>();
+  Console& con = *console;
   con.run(c, 1);
   std::vector<float> sink(audio::kSamplesPerFrame);
   for (int f = 0; f < kLabelFrames && con.state() == Console::State::kRunning; ++f) {
@@ -80,7 +82,10 @@ bool run_headless(const Headless& opts) {
     presses.push_back(p);
   }
 
-  Console con;
+  // Console holds several hundred KiB inline; keep it off the stack, which is
+  // small on some platforms' main-callback threads.
+  auto console = std::make_unique<Console>();
+  Console& con = *console;
   con.on_log = [](std::string_view s) { std::printf("%.*s\n", int(s.size()), s.data()); };
   con.run(c, 1);
   std::vector<float> sink(audio::kSamplesPerFrame);
