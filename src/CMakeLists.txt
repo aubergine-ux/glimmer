@@ -14,3 +14,28 @@ glimmer_module(cart SOURCES cart/cart.cpp cart/pack.cpp cart/image.cpp DEPS glim
 glimmer_module(script SOURCES script/vm.cpp script/api.cpp script/prelude.cpp
   DEPS glimmer_gfx glimmer_audio glimmer_input glimmer_lua)
 glimmer_module(runtime SOURCES runtime/console.cpp DEPS glimmer_script glimmer_cart)
+
+glimmer_module(crt SOURCES platform/crt.cpp)
+
+if(GLIMMER_BUILD_APP)
+  if(EMSCRIPTEN OR GLIMMER_FETCH_SDL)
+    include(FetchContent)
+    FetchContent_Declare(SDL3
+      URL https://github.com/libsdl-org/SDL/releases/download/release-3.4.18/SDL3-3.4.18.tar.gz
+      DOWNLOAD_EXTRACT_TIMESTAMP ON)
+    set(SDL_SHARED OFF CACHE BOOL "" FORCE)
+    set(SDL_STATIC ON CACHE BOOL "" FORCE)
+    set(SDL_TEST_LIBRARY OFF CACHE BOOL "" FORCE)
+    FetchContent_MakeAvailable(SDL3)
+  else()
+    find_package(SDL3 CONFIG REQUIRED)
+  endif()
+
+  add_executable(glimmer WIN32 MACOSX_BUNDLE
+    app/main.cpp app/tools.cpp
+    platform/app.cpp platform/boot_cart.cpp)
+  target_include_directories(glimmer PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+  target_compile_options(glimmer PRIVATE ${GLIMMER_WARNINGS})
+  target_link_libraries(glimmer PRIVATE glimmer_runtime glimmer_crt SDL3::SDL3)
+  set_target_properties(glimmer PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
+endif()
