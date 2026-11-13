@@ -126,7 +126,10 @@ void Console::show_error() {
   gfx.print(title, 4, 2, kErrorText);
 
   int y = 14;
-  auto wrap = [&](std::string_view text, int color) {
+  auto wrap = [&](std::string_view raw, int color) {
+    std::string expanded;
+    for (char ch : raw) expanded += ch == '\t' ? std::string("  ") : std::string(1, ch);
+    std::string_view text = expanded;
     while (!text.empty() && y < kScreenH - gfx::kCharH) {
       auto nl = text.find('\n');
       auto line = text.substr(0, nl);
