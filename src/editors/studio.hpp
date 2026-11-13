@@ -21,7 +21,7 @@ class CodeEditor;
 // source being edited.
 class Studio {
  public:
-  static constexpr int kTopH = 9;
+  static constexpr int kTopH = 8;
   static constexpr int kStatusH = 8;
 
   struct Host {

@@ -5,6 +5,7 @@
 #include <filesystem>
 
 #include "editors/code_editor.hpp"
+#include "editors/sprite_editor.hpp"
 #include "gfx/font.hpp"
 
 namespace glim::editors {
@@ -19,6 +20,7 @@ uint64_t seed() { return uint64_t(std::chrono::steady_clock::now().time_since_ep
 Studio::Studio(Console& console, Host host)
     : console_(console), host_(std::move(host)), ui_(console.input) {
   editors_.push_back(std::make_unique<CodeEditor>(*this));
+  editors_.push_back(std::make_unique<SpriteEditor>(*this));
 }
 
 Studio::~Studio() = default;
@@ -167,14 +169,14 @@ void Studio::draw_top_bar() {
   for (int i = 0; i < int(editors_.size()); ++i) {
     auto& e = *editors_[size_t(i)];
     std::string tip = std::string(e.name()) + " (alt+" + std::to_string(i + 1) + ")";
-    if (ui_.icon_button(1 + i * 10, -1, e.icon(), i == active_, tip)) select_editor(i);
+    if (ui_.icon_button(1 + i * 10, 0, e.icon(), i == active_, tip, kTopH)) select_editor(i);
   }
   std::string title = cart_.get_meta("title");
   if (title.empty()) title = path_.empty() ? "untitled" : std::filesystem::path(path_).stem().string();
   if (dirty_) title += "*";
   ui_.text_centered(title, {0, 0, kScreenW, kTopH}, th.text);
-  if (ui_.icon_button(kScreenW - 22, -1, ui::Icon::kSave, false, "save (ctrl+s)")) save();
-  if (ui_.icon_button(kScreenW - 11, -1, ui::Icon::kPlay, false, "run (ctrl+r)")) play();
+  if (ui_.icon_button(kScreenW - 22, 0, ui::Icon::kSave, false, "save (ctrl+s)", kTopH)) save();
+  if (ui_.icon_button(kScreenW - 11, 0, ui::Icon::kPlay, false, "run (ctrl+r)", kTopH)) play();
 }
 
 void Studio::draw_status_bar() {
@@ -195,6 +197,8 @@ void Studio::tick_editor() {
   ui_.begin_frame();
   shortcuts();
   if (playing_) return;
+  // The editors show art in the cart's own colors.
+  std::copy(cart_.palette.begin(), cart_.palette.end(), ui_.mem().data() + addr::kPalette);
   ui_.fill({0, 0, kScreenW, kScreenH}, ui_.theme().panel);
   ui::Rect body{0, kTopH, kScreenW, kScreenH - kTopH - kStatusH};
   editors_[size_t(active_)]->update(ui_, body);
