@@ -1,0 +1,96 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - name: linux-x86_64
+            os: ubuntu-24.04
+          - name: macos-universal
+            os: macos-15
+          - name: windows-x86_64
+            os: windows-2025
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install SDL build dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build libasound2-dev libpulse-dev libx11-dev libxext-dev \
+            libxrandr-dev libxcursor-dev libxi-dev libxss-dev libxkbcommon-dev libwayland-dev \
+            libegl1-mesa-dev libdrm-dev libgbm-dev libxtst-dev libxfixes-dev
+
+      - name: Build
+        shell: bash
+        run: |
+          extra=""
+          [ "$RUNNER_OS" = macOS ] && extra="-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64"
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DGLIMMER_FETCH_SDL=ON -DGLIMMER_BUILD_TESTS=OFF $extra
+          cmake --build build --config Release --parallel
+
+      - name: Package
+        shell: bash
+        run: |
+          name="glimmer-${GITHUB_REF_NAME#v}-${{ matrix.name }}"
+          mkdir -p "dist/$name"
+          cp -r carts LICENSE README.md "dist/$name/"
+          case "$RUNNER_OS" in
+            Linux)   cp build/glimmer "dist/$name/" ;;
+            macOS)   cp -r build/glimmer.app "dist/$name/Glimmer.app" ;;
+            Windows) cp build/Release/glimmer.exe "dist/$name/" ;;
+          esac
+          cd dist
+          if [ "$RUNNER_OS" = Windows ]; then
+            7z a "$name.zip" "$name" >/dev/null
+          elif [ "$RUNNER_OS" = macOS ]; then
+            ditto -c -k --keepParent "$name" "$name.zip"
+          else
+            tar czf "$name.tar.gz" "$name"
+          fi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.name }}
+          path: |
+            dist/*.zip
+            dist/*.tar.gz
+
+  publish:
+    needs: build
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Extract release notes
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          awk -v v="$version" '
+            $0 ~ "^## \\[" v "\\]" { on = 1; next }
+            on && /^## \[/ { exit }
+            on { print }
+          ' CHANGELOG.md > notes.md
+          [ -s notes.md ] || echo "See CHANGELOG.md." > notes.md
+
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          flags=""
+          case "$GITHUB_REF_NAME" in v0.*|*-*) flags="--prerelease" ;; esac
+          gh release create "$GITHUB_REF_NAME" dist/* --title "Glimmer ${GITHUB_REF_NAME#v}" --notes-file notes.md $flags
