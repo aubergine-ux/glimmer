@@ -66,12 +66,14 @@ bool bundle_game(const std::string& cart_path, const std::string& out, const std
   if (r.ok && out.empty()) r = {false, "missing --out"};
   std::string rt = runtime.empty() ? self_path() : runtime;
   if (r.ok && rt.empty()) r = {false, "can't find the runtime; pass --runtime"};
-  if (r.ok) r = cart::bundle(rt, c, out);
+  std::string target = out;
+  if (std::filesystem::path(rt).extension() == ".app" && !target.ends_with(".app")) target += ".app";
+  if (r.ok) r = cart::bundle(rt, c, target);
   if (!r.ok) {
     std::fprintf(stderr, "bundle failed: %s\n", r.error.c_str());
     return false;
   }
-  std::printf("built %s\n", out.c_str());
+  std::printf("built %s\n", target.c_str());
   return true;
 }
 
