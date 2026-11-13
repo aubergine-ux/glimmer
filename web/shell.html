@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Glimmer</title>
+  <style>
+    :root { color-scheme: dark; }
+    html, body { margin: 0; height: 100%; background: #0b0a12; color: #8a8fa8;
+      font: 14px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    body { display: flex; flex-direction: column; }
+    #stage { flex: 1; display: flex; align-items: center; justify-content: center; min-height: 0; }
+    canvas { display: block; width: 100%; height: 100%; outline: none; image-rendering: pixelated; }
+    #status { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+      pointer-events: none; letter-spacing: .1em; }
+    footer { padding: 6px 12px; display: flex; gap: 16px; justify-content: center; font-size: 12px; }
+    footer a { color: #a77bd8; text-decoration: none; }
+    kbd { color: #f2e9ff; }
+  </style>
+</head>
+<body>
+  <div id="stage"><canvas id="canvas" tabindex="-1"></canvas></div>
+  <div id="status">loading…</div>
+  <footer>
+    <span><kbd>arrows</kbd> move · <kbd>z</kbd> <kbd>x</kbd> buttons · <kbd>F9</kbd> crt</span>
+    <a href="?cart=orbit">orbit</a>
+    <a href="?cart=hello">hello</a>
+    <a href="https://github.com/aubergine-ux/glimmer">github</a>
+  </footer>
+  <script>
+    var statusEl = document.getElementById('status');
+    var canvas = document.getElementById('canvas');
+    var Module = {
+      canvas: canvas,
+      setStatus: function (s) { statusEl.textContent = s ? s.toLowerCase() : ''; },
+      onRuntimeInitialized: function () { statusEl.textContent = ''; canvas.focus(); },
+    };
+    // Browsers only start audio after a user gesture.
+    window.addEventListener('pointerdown', function () { canvas.focus(); });
+  </script>
+  {{{ SCRIPT }}}
+</body>
+</html>

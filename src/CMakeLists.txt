@@ -40,6 +40,9 @@ if(GLIMMER_BUILD_APP)
   set_target_properties(glimmer PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
   if(EMSCRIPTEN)
     set_target_properties(glimmer PROPERTIES SUFFIX ".html")
-    target_link_options(glimmer PRIVATE -sSTACK_SIZE=1048576)
+    target_link_options(glimmer PRIVATE -sSTACK_SIZE=1048576
+      --shell-file ${PROJECT_SOURCE_DIR}/web/shell.html
+      --preload-file ${PROJECT_SOURCE_DIR}/carts@/carts)
+    set_property(TARGET glimmer APPEND PROPERTY LINK_DEPENDS ${PROJECT_SOURCE_DIR}/web/shell.html)
   endif()
 endif()
