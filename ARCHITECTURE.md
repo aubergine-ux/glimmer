@@ -174,6 +174,21 @@ without touching the cart's RAM.
 - **Palette:** the editor framebuffer uses the cart's RGB palette, so art is
   always shown in the colors the game will use.
 
+### Translations
+
+UI text goes through `ui::tr("English text", args...)`:
+
+- **Keys:** the English string is the key, so English needs no file and an
+  untranslated string simply stays English.
+- **Language files:** each file in `lang/` is compiled into the binary by
+  `cmake/embed_langs.cmake` (as bytes, which avoids compiler limits on string
+  literals). Files in the user data folder can add or override languages.
+- **Placeholders:** `{0}`, `{1}`… stand for values, so a translation can
+  reorder them.
+- **Text rendering:** text is UTF-8. `gfx::glyphs()` decodes it, mapping the
+  Albanian letters to glyphs 138–141, and passes invalid bytes through as
+  raw glyph codes, so carts that print glyph bytes directly keep working.
+
 ## editors
 
 `Studio` owns the cart being edited and switches between editing and

@@ -7,6 +7,29 @@ separately in [SPEC.md](SPEC.md).
 
 ## [Unreleased]
 
+### Added
+
+- **Demo carts:**
+  - `sprout`: a platformer with snails, coyote time and a win screen.
+  - `starfall`: a vertical shooter.
+  - `crates`: a puzzle with six levels, undo and par scores.
+  - `loops`: a step sequencer.
+  - `bloom`: generative art.
+  - `learn`: an interactive tutorial.
+- **Translations:** the console UI is translatable through plain-text
+  language files, with English and Albanian built in. Text is UTF-8, and the
+  font has `ë ç Ë Ç`.
+- **Accessibility:** shell commands `lang`, `theme contrast`, `scale` and
+  `keys`, all saved between sessions.
+- **Tools:** `tools/extract_strings.py` lists the strings a translation still
+  needs.
+
+### Fixed
+
+- **`camera()` and `color()`:** called with no arguments, they re-applied the
+  previous value instead of resetting.
+- **Headless `--press`:** several ranges for the same button now all work.
+
 ## [0.2.1] - 2026-11-13
 
 ### Fixed
