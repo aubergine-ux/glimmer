@@ -139,6 +139,24 @@ bool Vm::load(std::string_view code, uint64_t seed) {
   return true;
 }
 
+bool Vm::reload(std::string_view code) {
+  error_ = {};
+  int status = luaL_loadbufferx(L_, code.data(), code.size(), kChunkName, "t");
+  if (status == LUA_OK) {
+    // Run on the main state, which never yields; the count hook still stops
+    // a runaway top level once it overruns its allowance.
+    cycles_ = 0;
+    budget_ = kCyclesPerFrame;
+    lua_sethook(L_, &Vm::hook, LUA_MASKCOUNT, kHookInterval);
+    status = lua_pcall(L_, 0, 0, 0);
+    lua_sethook(L_, nullptr, 0, 0);
+    if (status == LUA_OK) return true;
+  }
+  set_error(L_, status);
+  lua_pop(L_, 1);
+  return false;
+}
+
 bool Vm::has_function(const char* name) {
   int t = lua_getglobal(L_, name);
   lua_pop(L_, 1);

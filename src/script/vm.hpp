@@ -50,6 +50,10 @@ class Vm {
 
   // Compiles the cart code and queues it as the first job, followed by _init.
   bool load(std::string_view code, uint64_t seed);
+  // Hot reload: runs new code's top level in the live state, redefining
+  // functions while keeping globals set up by _init. A frame suspended
+  // mid-way keeps running its old code until it finishes.
+  bool reload(std::string_view code);
   // Runs the pending job, starting the next frame job if nothing is pending.
   // Returns kDone when a whole frame (or boot) finished within this tick.
   Status tick(uint64_t budget = kCyclesPerFrame);

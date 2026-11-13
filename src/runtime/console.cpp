@@ -63,6 +63,25 @@ bool Console::run(const cart::Cart& cart, uint64_t seed) {
   return true;
 }
 
+bool Console::reload(const cart::Cart& cart) {
+  if (state_ != State::kRunning || !vm_) return false;
+  auto put = [&](uint32_t a, const std::vector<uint8_t>& v, size_t len) {
+    std::copy_n(v.begin(), std::min(len, v.size()), mem.data() + a);
+  };
+  put(addr::kGfx, cart.gfx, addr::kGfxSize);
+  put(addr::kFlags, cart.flags, kSprites);
+  put(addr::kSfx, cart.sfx, addr::kSfxSize);
+  put(addr::kWave, cart.wave, addr::kWaveSize);
+  put(addr::kMusic, cart.music, addr::kMusicSize);
+  put(addr::kPalette, cart.palette, addr::kPaletteSize);
+  if (cart.map != cart_.map) put(addr::kMap, cart.map, addr::kMapSize);
+  audio.sync(mem);
+  cart_ = cart;
+  bool ok = vm_->reload(cart.code);
+  if (!ok) error_ = vm_->error();
+  return ok;
+}
+
 void Console::stop() {
   vm_.reset();
   audio.reset();

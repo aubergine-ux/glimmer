@@ -194,3 +194,37 @@ TEST_CASE("time advances one sixtieth per completed frame") {
   r.ticks(4);
   CHECK(r.log.back() == "2");
 }
+
+TEST_CASE("hot reload swaps functions but keeps state from _init") {
+  Console con;
+  std::vector<std::string> log;
+  con.on_log = [&](std::string_view s) { log.emplace_back(s); };
+  cart::Cart c;
+  c.code = "function _init() n = 0 end\nfunction _update() n = n + 1 printh('a' .. n) end";
+  con.run(c, 1);
+  for (int i = 0; i < 4; ++i) con.tick();
+  c.code = "function _init() n = 0 end\nfunction _update() n = n + 10 printh('b' .. n) end";
+  c.gfx[0] = 9;
+  REQUIRE(con.reload(c));
+  con.tick();
+  CHECK(log.back() == "b12");  // boot and _init take two of the four ticks
+  CHECK(con.mem.peek(addr::kGfx) == 9);
+
+  c.code = "function _update( broken";
+  CHECK_FALSE(con.reload(c));
+  CHECK(con.state() == Console::State::kRunning);
+  CHECK(con.error().line == 1);
+  con.tick();
+  CHECK(log.back() == "b22");
+}
+
+TEST_CASE("hot reload keeps runtime map changes unless the map was edited") {
+  Console con;
+  cart::Cart c;
+  c.code = "mset(1, 1, 7)";
+  con.run(c, 1);
+  con.tick();
+  REQUIRE(con.gfx.mget(0, 1, 1) == 7);
+  REQUIRE(con.reload(c));
+  CHECK(con.gfx.mget(0, 1, 1) == 7);
+}

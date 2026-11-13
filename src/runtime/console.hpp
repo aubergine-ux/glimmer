@@ -27,6 +27,12 @@ class Console {
   ~Console();
 
   bool run(const cart::Cart& cart, uint64_t seed);
+  // Applies an edited cart to the running game without restarting it. Code
+  // is re-run in place; sprites, flags, sound, music and the palette are
+  // refreshed, and the map too if it differs from the one the run started
+  // with (so runtime mset changes survive otherwise). On failure the game
+  // keeps running its old code and error() describes the problem.
+  bool reload(const cart::Cart& cart);
   void stop();
   void tick();
 
