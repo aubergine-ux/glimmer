@@ -1,9 +1,10 @@
 #pragma once
 
-#include <array>
 #include <cstdint>
+#include <algorithm>
 #include <cstring>
 #include <span>
+#include <vector>
 
 #include "core/memory_map.hpp"
 
@@ -12,12 +13,13 @@ namespace glim {
 // Console RAM. Every subsystem reads and writes its state here so that
 // peek/poke, save states and the editors all see one source of truth.
 // Out-of-range reads return 0 and writes are dropped; carts must never be
-// able to crash the host through memory access.
+// able to crash the host through memory access. Storage is on the heap so a
+// Memory (and a Console) can live anywhere, including small thread stacks.
 class Memory {
  public:
-  Memory() { clear(); }
+  Memory() : ram_(addr::kRamSize, 0) {}
 
-  void clear() { ram_.fill(0); }
+  void clear() { std::fill(ram_.begin(), ram_.end(), uint8_t(0)); }
 
   uint8_t peek(uint32_t a) const { return a < addr::kRamSize ? ram_[a] : 0; }
   void poke(uint32_t a, uint8_t v) {
@@ -47,7 +49,7 @@ class Memory {
   const uint8_t* data() const { return ram_.data(); }
 
  private:
-  std::array<uint8_t, addr::kRamSize> ram_{};
+  std::vector<uint8_t> ram_;
 };
 
 }  // namespace glim

@@ -1,11 +1,11 @@
 #pragma once
 
-#include <array>
 #include <cstdint>
 #include <functional>
 #include <memory>
 #include <string>
 #include <string_view>
+#include <vector>
 
 #include "audio/audio.hpp"
 #include "cart/cart.hpp"
@@ -62,7 +62,7 @@ class Console {
   std::unique_ptr<script::Vm> vm_;
   script::ScriptError error_;
   uint64_t frames_ = 0;
-  std::array<uint32_t, kScreenW * kScreenH> display_{};
+  std::vector<uint32_t> display_ = std::vector<uint32_t>(kScreenW * kScreenH, 0);
 };
 
 }  // namespace glim
